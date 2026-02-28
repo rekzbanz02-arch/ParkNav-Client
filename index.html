@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ParkNav — Parking Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── Variables ─────────────────────────────────────── */
+:root{
+  --bg:      #f4f6f9;
+  --surface: #ffffff;
+  --s2:      #f0f3f7;
+  --border:  #dde3ec;
+  --text:    #1a2332;
+  --muted:   #7a8ca0;
+  --dim:     #a8b8c8;
+  --green:   #16a34a;
+  --green-b: #dcfce7;
+  --amber:   #d97706;
+  --amber-b: #fef3c7;
+  --red:     #dc2626;
+  --red-b:   #fee2e2;
+  --blue:    #2563eb;
+  --mono:    'JetBrains Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+  --body:    'Nunito', sans-serif;
+  --r:       16px;
+  --shadow:  0 2px 16px rgba(0,0,0,.07);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:var(--body);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;flex-direction:column;
+}
+
+/* ─── Header ──────────────────────────────────────────── */
+header{
+  background:linear-gradient(135deg,#1a2332 0%,#1e3a5f 50%,#1a2f4a 100%);
+  padding:0 24px;
+  position:relative;overflow:hidden;
+}
+header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 120% at 80% 50%, #2563eb18, transparent);
+  pointer-events:none;
+}
+.header-inner{
+  position:relative;z-index:1;
+  max-width:900px;margin:0 auto;
+  padding:30px 0 24px;
+}
+.site-name{
+  font-family:var(--display);
+  font-size:52px;letter-spacing:3px;
+  color:#fff;line-height:1;
+  margin-bottom:4px;
+}
+.site-name span{color:#60a5fa;}
+.site-sub{
+  font-size:14px;font-weight:500;
+  color:#7da8d8;letter-spacing:.3px;
+}
+.header-status-row{
+  display:flex;align-items:center;gap:12px;
+  margin-top:16px;flex-wrap:wrap;
+}
+.hdr-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;padding:6px 14px;
+  font-family:var(--mono);font-size:11px;color:#a8c8f0;
+}
+.live-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#4ade80;box-shadow:0 0 8px #4ade80;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hdr-pill.red .live-dot{background:#f87171;box-shadow:0 0 8px #f87171;}
+#next-refresh{font-family:var(--mono);font-size:11px;color:#6080a0;padding:6px 12px;}
+
+
+
+/* ─── Main ────────────────────────────────────────────── */
+.content{
+  flex:1;
+  max-width:900px;width:100%;margin:0 auto;
+  padding:28px 24px;
+  display:flex;flex-direction:column;gap:28px;
+}
+
+/* ─── Total summary card ──────────────────────────────── */
+.total-card{
+  background:linear-gradient(135deg,#1e3a5f,#1a2f4a);
+  border-radius:var(--r);padding:22px 26px;
+  display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+  box-shadow:0 4px 24px rgba(0,0,0,.12);
+}
+.total-card .big-num{
+  font-family:var(--display);font-size:64px;letter-spacing:2px;
+  color:#fff;line-height:1;flex-shrink:0;
+}
+.total-details{flex:1;min-width:180px;}
+.total-label{
+  font-size:12px;font-weight:700;
+  color:#60a5fa;letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:6px;
+}
+.total-breakdown{
+  display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;
+}
+.breakdown-item{
+  display:flex;flex-direction:column;gap:2px;
+}
+.breakdown-val{font-family:var(--mono);font-size:22px;font-weight:600;color:#fff;}
+.breakdown-key{font-size:11px;color:#7da8d8;font-weight:600;}
+
+/* Donut ring */
+.donut-wrap{flex-shrink:0;position:relative;width:80px;height:80px;}
+.donut-wrap svg{transform:rotate(-90deg);}
+.donut-bg{fill:none;stroke:#ffffff18;stroke-width:8;}
+.donut-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.16,1,.3,1),stroke .4s;}
+.donut-label{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;
+}
+
+/* ─── Area cards ──────────────────────────────────────── */
+.sec-title{
+  font-family:var(--display);font-size:22px;letter-spacing:2px;
+  color:var(--text);display:flex;align-items:center;gap:10px;
+}
+.sec-title span{font-family:var(--body);font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0;}
+
+#cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:14px;
+}
+
+.area-card{
+  background:var(--surface);
+  border:2px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform .2s,box-shadow .2s;
+  animation:cardIn .5s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.area-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,.1);}
+.area-card.updated{animation:cardPop .5s ease both;}
+@keyframes cardPop{
+  0%{transform:scale(1.01);box-shadow:0 0 0 4px var(--blue)20;}
+  100%{transform:scale(1);box-shadow:var(--shadow);}
+}
+
+/* Card top colored band */
+.card-band{height:6px;transition:background .4s;}
+
+.card-content{padding:18px;}
+
+.card-area-name{
+  font-family:var(--display);font-size:26px;letter-spacing:1px;
+  color:var(--text);margin-bottom:14px;
+}
+
+/* Big fraction */
+.frac-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;}
+.frac-big{font-family:var(--mono);font-size:38px;font-weight:600;line-height:1;transition:color .4s;}
+.frac-denom{font-size:22px;color:var(--muted);}
+.avail-box{text-align:right;}
+.avail-num{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1;transition:color .4s;}
+.avail-key{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+/* Progress */
+.prog-track{height:10px;background:var(--s2);border-radius:999px;overflow:hidden;margin-bottom:12px;}
+.prog-fill{height:100%;border-radius:999px;transition:width .7s cubic-bezier(.16,1,.3,1),background .4s;}
+
+/* Status badge */
+.status-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--body);font-size:12px;font-weight:700;
+  padding:4px 12px;border-radius:999px;
+  letter-spacing:.02em;transition:all .3s;
+}
+.badge-green{background:var(--green-b);color:var(--green);}
+.badge-amber{background:var(--amber-b);color:var(--amber);}
+.badge-red  {background:var(--red-b);  color:var(--red);}
+
+.card-footer{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:12px;
+}
+.card-time{font-family:var(--mono);font-size:10px;color:var(--dim);}
+.fill-pct{font-family:var(--mono);font-size:11px;font-weight:600;transition:color .4s;}
+
+/* ─── Empty / error states ────────────────────────────── */
+.state-box{
+  background:var(--surface);border:2px dashed var(--border);
+  border-radius:var(--r);padding:60px 20px;
+  text-align:center;color:var(--muted);
+}
+.state-box .icon{font-size:44px;display:block;margin-bottom:14px;}
+.state-box h3{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text);}
+
+/* ─── Footer ──────────────────────────────────────────── */
+footer{
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:14px 24px;text-align:center;
+  font-family:var(--mono);font-size:11px;color:var(--dim);
+}
+
+/* ─── Responsive ──────────────────────────────────────── */
+@media(max-width:600px){
+  .site-name{font-size:38px;}
+  .total-card .big-num{font-size:48px;}
+  .header-inner,.content{padding-left:14px;padding-right:14px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-inner">
+    <div class="site-name">Park<span>Nav</span></div>
+    <div class="site-sub">Real-time Campus Parking Availability</div>
+    <div class="header-status-row">
+      <div class="hdr-pill" id="status-pill">
+        <div class="live-dot" id="live-dot"></div>
+        <span id="status-text">Connecting…</span>
+      </div>
+      <div id="next-refresh">—</div>
+      <div class="hdr-pill" id="msg-pill">0 total messages</div>
+    </div>
+  </div>
+</header>
+
+
+<div class="content">
+
+  <!-- Total summary -->
+  <div class="total-card" id="total-card">
+    <div class="big-num" id="t-avail">—</div>
+    <div class="total-details">
+      <div class="total-label">Total Available Slots</div>
+      <div style="font-size:14px;color:#7da8d8;font-weight:500">Campus Parking — total across all areas</div>
+      <div class="total-breakdown">
+        <div class="breakdown-item">
+          <div class="breakdown-val" id="t-occ">—</div>
+          <div class="breakdown-key">Occupied</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="breakdown-val" id="t-cap">—</div>
+          <div class="breakdown-key">Capacity</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="breakdown-val" id="t-full" style="color:#f87171">—</div>
+          <div class="breakdown-key">Areas Full</div>
+        </div>
+      </div>
+    </div>
+    <div class="donut-wrap">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle class="donut-bg" cx="40" cy="40" r="34"/>
+        <circle class="donut-fill" id="donut-fill" cx="40" cy="40" r="34"
+          stroke="#4ade80"
+          stroke-dasharray="213.6"
+          stroke-dashoffset="213.6"/>
+      </svg>
+      <div class="donut-label" id="donut-label">—%</div>
+    </div>
+  </div>
+
+  <!-- Area cards -->
+  <div>
+    <div class="sec-title">
+      PARKING AREAS
+      <span id="area-count">Loading…</span>
+    </div>
+  </div>
+  <div id="cards-grid">
+    <div class="state-box" id="empty-state">
+      <span class="icon">🅿</span>
+      <h3>Waiting for Data</h3>
+      <p>The Apps Script URL is not yet configured in the HTML file.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  ParkNav Parking System &nbsp;·&nbsp; Data from Google Sheets &nbsp;·&nbsp;
+  Auto-refreshes every 10 seconds &nbsp;·&nbsp;
+  <span id="footer-time">—</span>
+</footer>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════
+
+// ▼▼▼ PASTE YOUR APPS SCRIPT URL HERE ▼▼▼
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztQwSchnUkabk56N4u_unf-EyrzS2AjwgNNolohoUJYknKCvkUsxuMEbkI1tvnR8G9/exec';
+// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+let refreshTimer = null;
+let countdown    = 10;
+let latestAreas  = {};   // { Museum/CH/Loyola: { occupied, capacity, … } } — 3 specific areas only
+let campusTotal  = null; // { occupied, capacity, available, fillPct } — from Campus Parking message
+
+// Start fetching immediately if URL is set
+if (SCRIPT_URL && SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+  startFetching();
+}
+
+// ════════════════════════════════════════════════════════
+//  FETCH LATEST FROM SHEET
+// ════════════════════════════════════════════════════════
+
+function startFetching() {
+  clearInterval(refreshTimer);
+  fetchData();
+  resetCountdown();
+  refreshTimer = setInterval(()=>{
+    countdown--;
+    document.getElementById('next-refresh').textContent = `Refreshes in ${countdown}s`;
+    if (countdown <= 0) {
+      fetchData();
+      resetCountdown();
+    }
+  }, 1000);
+}
+
+function resetCountdown() {
+  countdown = 10;
+  document.getElementById('next-refresh').textContent = `Refreshes in ${countdown}s`;
+}
+
+async function fetchData() {
+  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+  setStatusPill('loading');
+  try {
+    const res  = await fetch(SCRIPT_URL + '?action=summary', { cache: 'no-store' });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Unknown error');
+
+    const allAreas = json.areas || {};
+
+    // Separate Campus (campus-wide total) from the 3 specific area cards
+    campusTotal = allAreas['Campus'] || null;
+    latestAreas = {};
+    Object.keys(allAreas).forEach(key => {
+      if (key !== 'Campus') latestAreas[key] = allAreas[key];
+    });
+
+    // Use Campus message numbers for summary if available,
+    // otherwise fall back to json totals (sum of specific areas from Apps Script)
+    const totalOcc = campusTotal ? campusTotal.occupied  : (json.totalOccupied || 0);
+    const totalCap = campusTotal ? campusTotal.capacity  : (json.totalCapacity || 0);
+
+    renderSummary(totalOcc, totalCap);
+    renderCards();
+    setStatusPill('ok');
+    document.getElementById('footer-time').textContent = 'Last updated: ' + fmtTime(Date.now());
+
+  } catch(e) {
+    setStatusPill('err');
+    console.error('Fetch error:', e);
+    showError(e.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDER SUMMARY
+// ════════════════════════════════════════════════════════
+
+function renderSummary(totalOcc, totalCap) {
+  const avail = Math.max(0, totalCap - totalOcc);
+  const pct   = totalCap ? Math.round((totalOcc/totalCap)*100) : 0;
+  // Count full areas from the 3 specific areas only (not Campus)
+  const full  = Object.values(latestAreas).filter(a=>a.status==='full').length;
+
+  document.getElementById('t-avail').textContent = avail;
+  document.getElementById('t-occ').textContent   = totalOcc;
+  document.getElementById('t-cap').textContent   = totalCap;
+  document.getElementById('t-full').textContent  = full;
+  document.getElementById('donut-label').textContent = pct + '%';
+
+  // Donut ring — shows occupancy
+  const circ = 213.6;
+  const offset = circ - (circ * pct / 100);
+  const fill = document.getElementById('donut-fill');
+  fill.style.strokeDashoffset = offset;
+  fill.style.stroke = pct >= 100 ? '#f87171' : pct >= 75 ? '#fbbf24' : '#4ade80';
+
+  // Pill shows how many specific areas are being monitored (always 3: CH, Museum, Loyola)
+  const specificCount = Object.keys(latestAreas).length;
+  document.getElementById('msg-pill').textContent =
+    specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' monitored';
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDER AREA CARDS
+// ════════════════════════════════════════════════════════
+
+const STATUS_META = {
+  available: { band:'#16a34a', badgeCls:'badge-green', icon:'✓', label:'Available',  numColor:'#16a34a' },
+  warning:   { band:'#d97706', badgeCls:'badge-amber', icon:'!', label:'Filling Up',  numColor:'#d97706' },
+  full:      { band:'#dc2626', badgeCls:'badge-red',   icon:'✕', label:'Full',        numColor:'#dc2626' },
+};
+
+function renderCards() {
+  const grid  = document.getElementById('cards-grid');
+  const areas = Object.keys(latestAreas); // Museum, CH, Loyola only — Campus already excluded
+
+  // Area count label — always shows specific areas, not Campus
+  const specificCount = areas.length;
+  document.getElementById('area-count').textContent =
+    specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' (CH · Museum · Loyola)';
+
+  // Remove empty state
+  const empty = document.getElementById('empty-state');
+  if (empty && areas.length > 0) empty.remove();
+
+  if (areas.length === 0) {
+    grid.innerHTML = `<div class="state-box" id="empty-state">
+      <span class="icon">📡</span><h3>No Data Yet</h3>
+      <p>The parking system hasn't sent any messages yet.</p></div>`;
+    return;
+  }
+
+  areas.forEach((area, i) => {
+    const d    = latestAreas[area];
+    const meta = STATUS_META[d.status] || STATUS_META.available;
+    const id   = 'acard-' + area.replace(/[^a-z0-9]/gi,'_');
+    const pct  = d.capacity ? Math.round((d.occupied/d.capacity)*100) : 100;
+    const avail= d.available || Math.max(0, d.capacity - d.occupied);
+    const existing = document.getElementById(id);
+
+    if (existing) {
+      // Update existing card
+      existing.querySelector('.card-band').style.background     = meta.band;
+      existing.querySelector('.frac-big').textContent           = d.occupied;
+      existing.querySelector('.frac-denom').textContent         = '/' + d.capacity;
+      existing.querySelector('.frac-big').style.color           = meta.numColor;
+      existing.querySelector('.avail-num').textContent          = avail;
+      existing.querySelector('.avail-num').style.color          = meta.numColor;
+      existing.querySelector('.prog-fill').style.width          = pct + '%';
+      existing.querySelector('.prog-fill').style.background     = meta.band;
+      existing.querySelector('.status-badge').className         = `status-badge ${meta.badgeCls}`;
+      existing.querySelector('.status-badge').textContent       = `${meta.icon} ${meta.label}`;
+      existing.querySelector('.card-time').textContent          = '↻ ' + fmtTime(Date.now());
+      existing.querySelector('.fill-pct').textContent           = pct + '% full';
+      existing.querySelector('.fill-pct').style.color           = meta.numColor;
+      existing.classList.remove('updated');
+      void existing.offsetWidth;
+      existing.classList.add('updated');
+    } else {
+      // Build new card
+      const card = document.createElement('div');
+      card.className = 'area-card';
+      card.id = id;
+      card.style.animationDelay = i * .1 + 's';
+      card.innerHTML = `
+        <div class="card-band" style="background:${meta.band}"></div>
+        <div class="card-content">
+          <div class="card-area-name">${esc(area)} Parking</div>
+          <div class="frac-row">
+            <div>
+              <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">OCCUPIED</div>
+              <span class="frac-big" style="color:${meta.numColor}">${d.occupied}</span><span class="frac-denom" style="font-family:var(--mono);font-size:22px;color:var(--muted)">/${d.capacity}</span>
+            </div>
+            <div class="avail-box">
+              <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">FREE</div>
+              <div class="avail-num" style="color:${meta.numColor}">${avail}</div>
+              <div style="font-size:11px;font-weight:700;color:var(--muted);">SLOTS</div>
+            </div>
+          </div>
+          <div class="prog-track">
+            <div class="prog-fill" style="width:${pct}%;background:${meta.band}"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="status-badge ${meta.badgeCls}">${meta.icon} ${meta.label}</span>
+            <span class="fill-pct" style="color:${meta.numColor}">${pct}% full</span>
+          </div>
+          <div class="card-footer">
+            <div class="card-time">↻ ${fmtTime(Date.now())}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">via Google Sheet</div>
+          </div>
+        </div>`;
+      grid.appendChild(card);
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════
+//  STATUS PILL
+// ════════════════════════════════════════════════════════
+
+function setStatusPill(state) {
+  const pill = document.getElementById('status-pill');
+  const dot  = document.getElementById('live-dot');
+  const txt  = document.getElementById('status-text');
+  pill.className = 'hdr-pill';
+  if (state === 'ok') {
+    txt.textContent = 'Live — Data Updated';
+    dot.style.background = '#4ade80';
+  } else if (state === 'loading') {
+    txt.textContent = 'Fetching…';
+    dot.style.background = '#60a5fa';
+  } else {
+    pill.className = 'hdr-pill red';
+    txt.textContent = 'Connection Error';
+    dot.style.background = '#f87171';
+  }
+}
+
+function showError(msg) {
+  const grid = document.getElementById('cards-grid');
+  if (Object.keys(latestAreas).length === 0) {
+    grid.innerHTML = `<div class="state-box">
+      <span class="icon">⚠️</span>
+      <h3>Could not load data</h3>
+      <p style="color:var(--muted);font-size:13px;margin-top:6px">${esc(msg)}<br><br>Check your Apps Script URL and make sure the deployment is set to <strong>"Anyone"</strong>.</p>
+    </div>`;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════════
+
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
