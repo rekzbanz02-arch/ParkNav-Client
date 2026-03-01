@@ -322,7 +322,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztQwSchnUkabk56N4u_
 // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 let refreshTimer = null;
-let countdown    = 3;
+let countdown    = 1;
 let latestAreas  = {};   // { Museum/CH/Loyola: { occupied, capacity, … } } — 3 specific areas only
 let campusTotal  = null; // { occupied, capacity, available, fillPct } — from Campus Parking message
 
@@ -350,7 +350,7 @@ function startFetching() {
 }
 
 function resetCountdown() {
-  countdown = 3;
+  countdown = 1;
   document.getElementById('next-refresh').textContent = `Refreshes in ${countdown}s`;
 }
 
