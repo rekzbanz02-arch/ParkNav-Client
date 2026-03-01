@@ -521,7 +521,7 @@ function setStatusPill(state) {
   const txt  = document.getElementById('status-text');
   pill.className = 'hdr-pill';
   if (state === 'ok') {
-    txt.textContent = 'Live — Data Updated';
+    txt.textContent = 'Live — Updated';
     dot.style.background = '#4ade80';
   } else if (state === 'loading') {
     txt.textContent = 'Fetching…';
