@@ -521,10 +521,10 @@ function setStatusPill(state) {
   const txt  = document.getElementById('status-text');
   pill.className = 'hdr-pill';
   if (state === 'ok') {
-    txt.textContent = 'Live — Updated';
+    txt.textContent = 'Live';
     dot.style.background = '#4ade80';
   } else if (state === 'loading') {
-    txt.textContent = 'Fetching…';
+    txt.textContent = '';
     dot.style.background = '#60a5fa';
   } else {
     pill.className = 'hdr-pill red';
