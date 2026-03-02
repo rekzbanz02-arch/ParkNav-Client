@@ -142,7 +142,7 @@ header::before{
 
 /* ─── Area cards ──────────────────────────────────────── */
 .sec-title{
-  font-family:var(--display);font-size:22px;letter-spacing:2px;
+  font-family:var(--display);font-size:36px;letter-spacing:2px;
   color:var(--text);display:flex;align-items:center;gap:10px;
 }
 .sec-title span{font-family:var(--body);font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0;}
@@ -185,7 +185,7 @@ header::before{
 .frac-big{font-family:var(--mono);font-size:38px;font-weight:600;line-height:1;transition:color .4s;}
 .frac-denom{font-size:22px;color:var(--muted);}
 .avail-box{text-align:right;}
-.avail-num{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1;transition:color .4s;}
+.avail-num{font-family:var(--mono);font-size:40px;font-weight:600;line-height:1;transition:color .4s;}
 .avail-key{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
 
 /* Progress */
@@ -276,6 +276,7 @@ footer{
           <div class="breakdown-key">Areas Full</div>
         </div>
       </div>
+      <div id="campus-last-updated" style="font-family:var(--mono);font-size:10px;color:#6080a0;margin-top:10px;letter-spacing:.02em;"></div>
     </div>
     <div class="donut-wrap">
       <svg width="80" height="80" viewBox="0 0 80 80">
@@ -307,8 +308,8 @@ footer{
 </div>
 
 <footer>
-  ParkNav Parking System &nbsp;·&nbsp; Data from Google Sheets &nbsp;·&nbsp;
-  Auto-refreshes every 10 seconds &nbsp;·&nbsp;
+  ParkNav Parking System &nbsp;·&nbsp;
+  Auto-refreshes every 3 seconds &nbsp;·&nbsp;
   <span id="footer-time">—</span>
 </footer>
 
@@ -323,8 +324,9 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztQwSchnUkabk56N4u_
 
 let refreshTimer = null;
 let countdown    = 3;
-let latestAreas  = {};   // { Museum/CH/Loyola: { occupied, capacity, … } } — 3 specific areas only
+let latestAreas  = {};   // { Campion Hall/Museo de Oro/Loyola House: { occupied, capacity, … } } — 3 specific areas only
 let campusTotal  = null; // { occupied, capacity, available, fillPct } — from Campus Parking message
+let campusTotalPrev = null; // previous campus snapshot for drop-off guard and timestamp tracking
 
 // Start fetching immediately if URL is set
 if (SCRIPT_URL && SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
@@ -365,11 +367,36 @@ async function fetchData() {
     const allAreas = json.areas || {};
 
     // Separate Campus (campus-wide total) from the 3 specific area cards
+    const prevCampusSnapshot = campusTotalPrev; // snapshot BEFORE this cycle
     campusTotal = allAreas['Campus'] || null;
+
+    // Track per-area lastUpdated: stamp only areas whose data actually changed
+    const fetchedAt = Date.now();
+    const prevAreas = latestAreas;
     latestAreas = {};
     Object.keys(allAreas).forEach(key => {
-      if (key !== 'Campus') latestAreas[key] = allAreas[key];
+      if (key !== 'Campus') {
+        const fresh = allAreas[key];
+        const prev  = prevAreas[key];
+        // Carry forward the old timestamp if nothing changed; otherwise stamp now
+        const changed = !prev
+          || prev.occupied !== fresh.occupied
+          || prev.capacity !== fresh.capacity
+          || prev.status   !== fresh.status;
+        fresh.lastUpdated = changed ? fetchedAt : (prev.lastUpdated || fetchedAt);
+        latestAreas[key] = fresh;
+      }
     });
+
+    // Campus lastUpdated: stamp only if its occupied/capacity changed
+    if (campusTotal) {
+      const campusChanged = !prevCampusSnapshot
+        || prevCampusSnapshot.occupied !== campusTotal.occupied
+        || prevCampusSnapshot.capacity !== campusTotal.capacity;
+      campusTotal.lastUpdated = campusChanged ? fetchedAt : (prevCampusSnapshot ? prevCampusSnapshot.lastUpdated : fetchedAt);
+    }
+    // renderSummary uses campusTotalPrev (= prevCampusSnapshot at this point) for the drop-off guard
+    campusTotalPrev = prevCampusSnapshot;
 
     // Use Campus message numbers for summary if available,
     // otherwise fall back to json totals (sum of specific areas from Apps Script)
@@ -377,6 +404,7 @@ async function fetchData() {
     const totalCap = campusTotal ? campusTotal.capacity  : (json.totalCapacity || 0);
 
     renderSummary(totalOcc, totalCap);
+    campusTotalPrev = campusTotal ? { ...campusTotal } : null; // update for next cycle's guard
     renderCards();
     setStatusPill('ok');
     document.getElementById('footer-time').textContent = 'Last updated: ' + fmtTime(Date.now());
@@ -393,6 +421,28 @@ async function fetchData() {
 // ════════════════════════════════════════════════════════
 
 function renderSummary(totalOcc, totalCap) {
+  // ── DROP-OFF GUARD ─────────────────────────────────────────────────────
+  // A vehicle may pass through the main gate to drop a passenger, then exit
+  // without parking in any specific lot.  When that happens the campus sensor
+  // fires an "exit" decrement, but none of the three lot sensors change.
+  // We detect this mismatch and override the campus count with the true lot sum.
+  const lotSum = Object.values(latestAreas).reduce((acc, a) => acc + (a.occupied || 0), 0);
+  const prevLotSum  = campusTotalPrev ? (campusTotalPrev._lotSum != null ? campusTotalPrev._lotSum : lotSum) : lotSum;
+  const campusDropped  = campusTotalPrev !== null && campusTotal !== null
+    && campusTotal.occupied < campusTotalPrev.occupied;
+  const lotSumChanged  = lotSum !== prevLotSum;
+
+  if (campusDropped && !lotSumChanged) {
+    // Campus count fell but no lot changed → drop-off event, not a real exit
+    totalOcc = lotSum;
+    if (campusTotal) campusTotal.occupied = lotSum;  // keep state consistent
+  }
+  // Store lotSum so the next cycle's guard can compare
+  if (campusTotal) campusTotal._lotSum = lotSum;
+  else if (campusTotal === null) { /* no campus sensor data yet — no guard needed */ }
+
+  // ACCOUNTING GUARD: clamp occupied so it never drops below 0 or exceeds capacity.
+  totalOcc = Math.min(Math.max(0, totalOcc), totalCap || 0);
   const avail = Math.max(0, totalCap - totalOcc);
   const pct   = totalCap ? Math.round((totalOcc/totalCap)*100) : 0;
   // Count full areas from the 3 specific areas only (not Campus)
@@ -404,6 +454,14 @@ function renderSummary(totalOcc, totalCap) {
   document.getElementById('t-full').textContent  = full;
   document.getElementById('donut-label').textContent = pct + '%';
 
+  // Change 2: show main-gate (campus sensor) last-updated timestamp
+  const campusTimeEl = document.getElementById('campus-last-updated');
+  if (campusTimeEl) {
+    campusTimeEl.textContent = campusTotal && campusTotal.lastUpdated
+      ? '↻ ' + fmtTime(campusTotal.lastUpdated)
+      : '';
+  }
+
   // Donut ring — shows occupancy
   const circ = 213.6;
   const offset = circ - (circ * pct / 100);
@@ -411,7 +469,7 @@ function renderSummary(totalOcc, totalCap) {
   fill.style.strokeDashoffset = offset;
   fill.style.stroke = pct >= 100 ? '#f87171' : pct >= 75 ? '#fbbf24' : '#4ade80';
 
-  // Pill shows how many specific areas are being monitored (always 3: CH, Museum, Loyola)
+  // Pill shows how many specific areas are being monitored
   const specificCount = Object.keys(latestAreas).length;
   document.getElementById('msg-pill').textContent =
     specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' monitored';
@@ -421,6 +479,22 @@ function renderSummary(totalOcc, totalCap) {
 //  RENDER AREA CARDS
 // ════════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════════
+//  AREA DISPLAY NAME MAP
+// ════════════════════════════════════════════════════════
+const AREA_DISPLAY_NAMES = {
+  'CH':      'Campion Hall',
+  'Museum':  'Museo de Oro',
+  'Loyola':  'Loyola House',
+  // Fallbacks for full names already used as keys
+  'Campion Hall': 'Campion Hall',
+  'Museo de Oro': 'Museo de Oro',
+  'Loyola House': 'Loyola House',
+};
+function displayName(area) {
+  return AREA_DISPLAY_NAMES[area] || area;
+}
+
 const STATUS_META = {
   available: { band:'#16a34a', badgeCls:'badge-green', icon:'✓', label:'Available',  numColor:'#16a34a' },
   warning:   { band:'#d97706', badgeCls:'badge-amber', icon:'!', label:'Filling Up',  numColor:'#d97706' },
@@ -429,12 +503,12 @@ const STATUS_META = {
 
 function renderCards() {
   const grid  = document.getElementById('cards-grid');
-  const areas = Object.keys(latestAreas); // Museum, CH, Loyola only — Campus already excluded
+  const areas = Object.keys(latestAreas); // Campion Hall, Museo de Oro, Loyola House only — Campus already excluded
 
   // Area count label — always shows specific areas, not Campus
   const specificCount = areas.length;
   document.getElementById('area-count').textContent =
-    specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' (CH · Museum · Loyola)';
+    specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' (Campion Hall · Museo de Oro · Loyola House)';
 
   // Remove empty state
   const empty = document.getElementById('empty-state');
@@ -449,17 +523,23 @@ function renderCards() {
 
   areas.forEach((area, i) => {
     const d    = latestAreas[area];
+    // ACCOUNTING GUARD: clamp occupied per area — if a car was denied entry (status=full,
+    // no entry logged) and later an exit signal arrives, occupied must not go negative.
+    // Also cap at capacity so over-capacity entries don't break the display.
+    d.occupied = Math.min(Math.max(0, d.occupied || 0), d.capacity || 0);
     const meta = STATUS_META[d.status] || STATUS_META.available;
     const id   = 'acard-' + area.replace(/[^a-z0-9]/gi,'_');
     const pct  = d.capacity ? Math.round((d.occupied/d.capacity)*100) : 100;
-    const avail= d.available || Math.max(0, d.capacity - d.occupied);
+    const avail= Math.max(0, d.capacity - d.occupied);
     const existing = document.getElementById(id);
 
     if (existing) {
       // Update existing card
       existing.querySelector('.card-band').style.background     = meta.band;
       existing.querySelector('.frac-big').textContent           = d.occupied;
+      existing.querySelector('.frac-big').style.fontSize        = '26px';
       existing.querySelector('.frac-denom').textContent         = '/' + d.capacity;
+      existing.querySelector('.frac-denom').style.fontSize      = '16px';
       existing.querySelector('.frac-big').style.color           = meta.numColor;
       existing.querySelector('.avail-num').textContent          = avail;
       existing.querySelector('.avail-num').style.color          = meta.numColor;
@@ -467,7 +547,7 @@ function renderCards() {
       existing.querySelector('.prog-fill').style.background     = meta.band;
       existing.querySelector('.status-badge').className         = `status-badge ${meta.badgeCls}`;
       existing.querySelector('.status-badge').textContent       = `${meta.icon} ${meta.label}`;
-      existing.querySelector('.card-time').textContent          = '↻ ' + fmtTime(Date.now());
+      existing.querySelector('.card-time').textContent          = '↻ ' + fmtTime(d.lastUpdated || Date.now());
       existing.querySelector('.fill-pct').textContent           = pct + '% full';
       existing.querySelector('.fill-pct').style.color           = meta.numColor;
       existing.classList.remove('updated');
@@ -482,16 +562,16 @@ function renderCards() {
       card.innerHTML = `
         <div class="card-band" style="background:${meta.band}"></div>
         <div class="card-content">
-          <div class="card-area-name">${esc(area)} Area</div>
+          <div class="card-area-name">${esc(displayName(area))} Area</div>
           <div class="frac-row">
-            <div>
-              <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">OCCUPIED</div>
-              <span class="frac-big" style="color:${meta.numColor}">${d.occupied}</span><span class="frac-denom" style="font-family:var(--mono);font-size:22px;color:var(--muted)">/${d.capacity}</span>
-            </div>
-            <div class="avail-box">
-              <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">FREE</div>
+            <div class="avail-box" style="text-align:left;">
+              <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">AVAILABLE</div>
               <div class="avail-num" style="color:${meta.numColor}">${avail}</div>
               <div style="font-size:11px;font-weight:700;color:var(--muted);">SLOTS</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">OCCUPIED</div>
+              <span class="frac-big" style="color:${meta.numColor};font-size:26px;">${d.occupied}</span><span class="frac-denom" style="font-family:var(--mono);font-size:16px;color:var(--muted)">/${d.capacity}</span>
             </div>
           </div>
           <div class="prog-track">
@@ -502,8 +582,9 @@ function renderCards() {
             <span class="fill-pct" style="color:${meta.numColor}">${pct}% full</span>
           </div>
           <div class="card-footer">
-            <div class="card-time">↻ ${fmtTime(Date.now())}</div>
-            <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">via Google Sheet</div>
+            <div class="card-time">↻ ${fmtTime(d.lastUpdated || Date.now())}</div>
+          
+		  <!-- <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">via Google Sheet</div> -->
           </div>
         </div>`;
       grid.appendChild(card);
@@ -521,10 +602,10 @@ function setStatusPill(state) {
   const txt  = document.getElementById('status-text');
   pill.className = 'hdr-pill';
   if (state === 'ok') {
-    txt.textContent = 'Live';
+    txt.textContent = 'Live_';
     dot.style.background = '#4ade80';
   } else if (state === 'loading') {
-    txt.textContent = '';
+    txt.textContent = 'Live';
     dot.style.background = '#60a5fa';
   } else {
     pill.className = 'hdr-pill red';
