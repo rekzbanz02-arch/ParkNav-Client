@@ -139,11 +139,7 @@ header::before{
   position:absolute;inset:0;display:grid;place-items:center;
   font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;
 }
-  // Pill shows how many specific areas are being monitored
-  const specificCount = Object.keys(latestAreas).length;
-  document.getElementById('msg-pill').textContent =
-    specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' monitored';
-}
+
 /* ─── Area cards ──────────────────────────────────────── */
 .sec-title{
   font-family:var(--display);font-size:35px;letter-spacing:2px;
@@ -472,7 +468,11 @@ function renderSummary(totalOcc, totalCap) {
   const fill = document.getElementById('donut-fill');
   fill.style.strokeDashoffset = offset;
   fill.style.stroke = pct >= 100 ? '#f87171' : pct >= 75 ? '#fbbf24' : '#4ade80';
-
+  // Pill shows how many specific areas are being monitored
+  const specificCount = Object.keys(latestAreas).length;
+  document.getElementById('msg-pill').textContent =
+    specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' monitored';
+}
 // ════════════════════════════════════════════════════════
 //  RENDER AREA CARDS
 // ════════════════════════════════════════════════════════
