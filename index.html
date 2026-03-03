@@ -515,7 +515,6 @@ footer {
 
 <footer>
   ParkNav Parking System &nbsp;·&nbsp;
-  Auto-refreshes every 3 seconds &nbsp;·&nbsp;
   <span id="footer-time">—</span>
 </footer>
 
@@ -549,7 +548,7 @@ function startFetching() {
   resetCountdown();
   refreshTimer = setInterval(()=>{
     countdown--;
-    document.getElementById('next-refresh').textContent = `Refreshes in ${countdown}s`;
+    document.getElementById('next-refresh').textContent = `${countdown}s`;
     if (countdown <= 0) {
       fetchData();
       resetCountdown();
@@ -559,7 +558,7 @@ function startFetching() {
 
 function resetCountdown() {
   countdown = 3;
-  document.getElementById('next-refresh').textContent = `Refreshes in ${countdown}s`;
+  document.getElementById('next-refresh').textContent = `${countdown}s`;
 }
 
 async function fetchData() {
@@ -806,7 +805,7 @@ function setStatusPill(state) {
   const txt  = document.getElementById('status-text');
   pill.className = 'hdr-pill';
   if (state === 'ok') {
-    txt.textContent = 'Live_';
+    txt.textContent = 'Live';
     dot.style.background = '#4ade80';
   } else if (state === 'loading') {
     txt.textContent = 'Live';
