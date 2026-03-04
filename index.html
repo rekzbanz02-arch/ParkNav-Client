@@ -3,791 +3,624 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="theme-color" content="#07101f"/>
 <title>ParkNav — Parking Status</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🅿️</text></svg>"/>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Source+Sans+3:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ─── Variables ─────────────────────────────────────── */
 :root {
-  --navy:      #1a2c5b;
-  --navy-dark: #111e3f;
-  --gold:      #c8932a;
-  --gold-lt:   #f0c666;
-  --gold-b:    #fdf3dc;
-  --bg:        #f5f6f8;
+  --navy:      #0d1b33;
+  --navy-dark: #07101f;
+  --gold:      #d4af37;
+  --gold-lt:   #eadb88;
+  --bg:        #f0f2f5;
   --surface:   #ffffff;
-  --s2:        #eef0f4;
-  --border:    #d8dce8;
-  --text:      #1a2340;
-  --muted:     #6b7a99;
-  --dim:       #9daabb;
-  --green:     #1a7a4a;
-  --green-b:   #e0f5ea;
-  --amber:     #b56b00;
-  --amber-b:   #fef3d4;
-  --red:       #c0182a;
-  --red-b:     #fde8ea;
+  --s2:        #e9ecef;
+  --border:    #d4af37;
+  --text:      #1c2833;
+  --muted:     #5d6d7e;
+  --dim:       #85929e;
+  --green:     #196f3d;
+  --green-b:   #e8f8f5;
+  --amber:     #b9770e;
+  --amber-b:   #fef9e7;
+  --red:       #922b21;
+  --red-b:     #fdedec;
   --mono:      'DM Mono', monospace;
   --display:   'Playfair Display', serif;
   --body:      'Source Sans 3', sans-serif;
-  --r:         12px;
-  --shadow:    0 2px 12px rgba(26,44,91,.08);
-  --shadow-md: 0 6px 24px rgba(26,44,91,.12);
+  --r:         4px;
+  --shadow:    0 4px 12px rgba(13,27,51,.15);
+  --shadow-md: 0 8px 24px rgba(13,27,51,.2);
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:15px;line-height:1.6;}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Header ── */
+header{background:var(--navy-dark);padding:0;position:relative;overflow:hidden;border-bottom:6px solid var(--gold);}
+header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0px,rgba(255,255,255,.02) 1px,transparent 1px,transparent 80px);pointer-events:none;}
+.header-inner{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:36px 24px 28px;}
+.sec-head2 h3{font-family:var(--body);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;}
+.site-name{font-family:var(--display);font-size:48px;font-weight:800;color:#fff;line-height:1.1;letter-spacing:-0.5px;margin-bottom:6px;}
+.site-name span{color:var(--gold);}
+.site-sub{font-size:14px;font-weight:500;color:rgba(255,255,255,.7);letter-spacing:0.5px;}
+.header-status-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;}
+.hdr-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.3);border-radius:4px;padding:8px 16px;font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.8);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#2ecc71;box-shadow:0 0 10px #2ecc71;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.hdr-pill.red .live-dot{background:#e74c3c;box-shadow:0 0 10px #e74c3c;}
+#next-refresh{font-family:var(--mono);font-size:12px;color:var(--gold);padding:6px 12px;border:1px dashed rgba(212,175,55,0.4);border-radius:4px;min-width:2.8em;text-align:center;}
+.hdr-clock{font-family:var(--mono);font-size:12px;color:var(--gold-lt);padding:6px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.2);border-radius:4px;letter-spacing:.03em;opacity:.9;}
 
-body {
-  font-family: var(--body);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  font-size: 15px;
-  line-height: 1.5;
+/* ── Layout ── */
+.content{flex:1;max-width:1100px;width:100%;margin:0 auto;padding:40px 24px;display:flex;flex-direction:column;}
+.academic-frame{background:var(--surface);border:1px solid var(--border);padding:32px;box-shadow:var(--shadow);border-radius:var(--r);position:relative;}
+.academic-frame::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--gold);border-top-left-radius:var(--r);border-top-right-radius:var(--r);}
+
+/* ── Section wrapper labels ── */
+.section-label{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--body);font-size:11px;font-weight:700;
+  color:var(--muted);letter-spacing:.15em;text-transform:uppercase;
+  margin-bottom:10px;padding-right:4px;
 }
+.section-label::after{content:'';flex:1;height:1px;background:var(--s2);}
 
-/* ─── Header ──────────────────────────────────────────── */
-header {
-  background: var(--navy-dark);
-  padding: 0 32px;
-  position: relative;
-  overflow: hidden;
-  border-bottom: 4px solid var(--gold);
+/* ── Campus Gate Panel (top, promoted) ── */
+.gate-panel{
+  background:var(--navy);
+  box-shadow:inset 0 0 0 1px rgba(212,175,55,0.35);
+  border-radius:var(--r);
+  overflow:hidden;
+  margin-bottom:12px;
 }
-
-header::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(255,255,255,.015) 0px,
-      rgba(255,255,255,.015) 1px,
-      transparent 1px,
-      transparent 60px
-    );
-  pointer-events: none;
+.gate-panel-inner{
+  display:flex;align-items:center;gap:28px;flex-wrap:wrap;
+  padding:22px 28px;
 }
-
-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-lt), transparent);
-  opacity: .5;
+.gate-panel-left{flex:1;min-width:180px;}
+.gate-panel-title{
+  font-family:var(--display);font-size:15px;font-weight:800;
+  color:#fff;letter-spacing:0.03em;margin-bottom:2px;
 }
+.gate-panel-sub{font-family:var(--mono);font-size:11px;color:var(--gold-lt);opacity:.8;}
+.gate-panel-stats{display:flex;gap:28px;flex-wrap:wrap;align-items:center;}
+.gate-panel-stat{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.gate-panel-val{font-family:var(--mono);font-size:32px;font-weight:500;color:var(--gold);line-height:1;}
+.gate-panel-key{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;}
+.gate-traffic-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--body);font-size:12px;font-weight:700;padding:7px 16px;border-radius:3px;letter-spacing:.05em;text-transform:uppercase;transition:all .3s;}
+.gate-traffic-badge.normal{background:rgba(25,111,61,0.25);color:#5ddb8f;border:1px solid rgba(25,111,61,0.4);}
+.gate-traffic-badge.busy{background:rgba(185,119,14,0.25);color:var(--gold-lt);border:1px solid rgba(212,175,55,0.4);}
+.gate-traffic-badge.high{background:rgba(146,43,33,0.3);color:#f5a89a;border:1px solid rgba(192,57,43,0.4);}
 
-.header-inner {
-  position: relative;
-  z-index: 1;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 28px 0 22px;
+/* ── Drop-off note ── */
+.dropoff-note{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:12px;color:var(--muted);
+  background:var(--amber-b);
+  border-left:3px solid var(--gold);
+  padding:10px 14px;
+  border-radius:0 var(--r) var(--r) 0;
+  margin-bottom:20px;
 }
+.dropoff-note strong{color:var(--amber);display:inline;}
 
-.sec-head2 h3 {
-  font-family: var(--body);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--gold-lt);
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-  opacity: .85;
+/* ── Lots Overview Card ── */
+.lots-overview{
+  background:var(--navy);padding:28px 32px;
+  display:flex;align-items:center;gap:32px;flex-wrap:wrap;
+  box-shadow:inset 0 0 0 1px var(--gold);
+  position:relative;overflow:hidden;
+  border-radius:var(--r);
+  margin-bottom:20px;
 }
+.lots-overview .big-num{font-family:var(--display);font-size:80px;font-weight:800;color:var(--gold);line-height:1;flex-shrink:0;letter-spacing:-2px;}
+.lots-details{flex:1;min-width:220px;}
+.lots-label{font-family:var(--display);font-size:18px;font-weight:700;color:#fff;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:2px;}
+.lots-sublabel{font-size:12px;color:var(--gold-lt);font-weight:600;text-transform:uppercase;letter-spacing:1px;opacity:.8;}
+.campus-time{font-family:var(--mono);font-size:12px;color:var(--gold-lt);margin-top:8px;display:block;opacity:0.7;}
+.total-breakdown{display:flex;gap:24px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid rgba(212,175,55,0.2);}
+.breakdown-item{display:flex;flex-direction:column;gap:4px;}
+.breakdown-val{font-family:var(--mono);font-size:24px;font-weight:500;color:#fff;}
+.breakdown-key{font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.1em;text-transform:uppercase;}
 
-.site-name {
-  font-family: var(--display);
-  font-size: 42px;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.05;
-  letter-spacing: -.5px;
-  margin-bottom: 4px;
-}
-.site-name span { color: var(--gold-lt); }
+/* ── Donut ── */
+.donut-wrap{flex-shrink:0;position:relative;width:96px;height:96px;}
+.donut-wrap svg{transform:rotate(-90deg);}
+.donut-bg{fill:none;stroke:rgba(255,255,255,.1);stroke-width:8;}
+.donut-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.16,1,.3,1),stroke .4s;}
+.donut-label{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:16px;font-weight:500;color:#fff;}
 
-.site-sub {
-  font-size: 13px;
-  font-weight: 500;
-  color: rgba(255,255,255,.5);
-  letter-spacing: .3px;
-}
+/* ── Section title ── */
+.sec-title-wrap{text-align:center;margin-bottom:24px;margin-top:32px;position:relative;}
+.sec-title-wrap::after{content:'';display:block;width:60px;height:3px;background:var(--gold);margin:12px auto 0;}
+.sec-title{font-family:var(--display);font-size:22px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:1px;}
+.sec-subtitle{font-family:var(--body);font-size:14px;font-weight:600;color:var(--muted);margin-top:6px;display:block;}
 
-.header-status-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
+/* ── Area cards ── */
+#cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;}
+.area-card{background:var(--surface);border:1px solid rgba(13,27,51,0.1);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;animation:cardIn .45s cubic-bezier(.16,1,.3,1) both;position:relative;}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.area-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);}
+.card-band{height:6px;transition:background .4s;}
+.card-content{padding:24px;}
+.card-area-name{font-family:var(--display);font-size:22px;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.2;}
+.card-area-time{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:20px;display:block;}
+.frac-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;gap:12px;}
+.frac-big{font-family:var(--mono);font-size:32px;font-weight:500;line-height:1;transition:color .4s;}
+.frac-denom{font-family:var(--mono);font-size:16px;color:var(--muted);}
+.avail-box{text-align:left;}
+.avail-num{font-family:var(--mono);font-size:36px;font-weight:500;line-height:1;transition:color .4s;}
+.metric-label{font-family:var(--body);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.prog-track{height:6px;background:var(--s2);border-radius:2px;overflow:hidden;margin-bottom:16px;}
+.prog-fill{height:100%;border-radius:2px;transition:width .7s cubic-bezier(.16,1,.3,1),background .4s;}
+.status-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--body);font-size:12px;font-weight:700;padding:6px 14px;border-radius:3px;letter-spacing:.05em;text-transform:uppercase;transition:all .3s;}
+.badge-green{background:var(--green-b);color:var(--green);border:1px solid rgba(25,111,61,0.2);}
+.badge-amber{background:var(--amber-b);color:var(--amber);border:1px solid rgba(185,119,14,0.2);}
+.badge-red{background:var(--red-b);color:var(--red);border:1px solid rgba(146,43,33,0.2);}
+.fill-pct{font-family:var(--mono);font-size:13px;font-weight:600;transition:color .4s;}
 
-.hdr-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(255,255,255,.13);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: rgba(255,255,255,.6);
-}
+/* ── Empty / error states ── */
+.state-box{background:var(--surface);border:2px dashed var(--gold);padding:60px 20px;text-align:center;color:var(--muted);}
+.state-box .icon{font-size:48px;display:block;margin-bottom:16px;}
+.state-box h3{font-family:var(--display);font-size:20px;font-weight:700;margin-bottom:8px;color:var(--navy);}
 
-.live-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 8px #4ade80;
-  animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
-.hdr-pill.red .live-dot { background: #f87171; box-shadow: 0 0 8px #f87171; }
+/* ── Footer ── */
+footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);padding:24px;text-align:center;font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.05em;}
 
-#next-refresh {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: rgba(255,255,255,.35);
-  padding: 6px 10px;
-}
-
-/* ─── Main ────────────────────────────────────────────── */
-.content {
-  flex: 1;
-  max-width: 960px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 32px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-
-/* ─── Total summary card ──────────────────────────────── */
-.total-card {
-  background: var(--navy);
-  border-radius: var(--r);
-  padding: 26px 30px;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  flex-wrap: wrap;
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(200,147,42,.25);
-  position: relative;
-  overflow: hidden;
-}
-
-.total-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--gold), var(--gold-lt), var(--gold));
-}
-
-.total-card .big-num {
-  font-family: var(--display);
-  font-size: 72px;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1;
-  flex-shrink: 0;
-  letter-spacing: -2px;
-}
-
-.total-details { flex: 1; min-width: 180px; }
-
-.total-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--gold-lt);
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-  opacity: .9;
-}
-
-.total-breakdown {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-.breakdown-item { display: flex; flex-direction: column; gap: 2px; }
-
-.breakdown-val {
-  font-family: var(--mono);
-  font-size: 20px;
-  font-weight: 500;
-  color: #fff;
-}
-
-.breakdown-key {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255,255,255,.45);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-/* Donut ring */
-.donut-wrap { flex-shrink: 0; position: relative; width: 84px; height: 84px; }
-.donut-wrap svg { transform: rotate(-90deg); }
-.donut-bg { fill: none; stroke: rgba(255,255,255,.1); stroke-width: 8; }
-.donut-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset .8s cubic-bezier(.16,1,.3,1), stroke .4s; }
-.donut-label {
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 500;
-  color: #fff;
-}
-
-/* ─── Section title ───────────────────────────────────── */
-.sec-title {
-  font-family: var(--display);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--navy);
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--border);
-}
-
-.sec-title span {
-  font-family: var(--body);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0;
-}
-
-/* ─── Area cards ──────────────────────────────────────── */
-#cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 16px;
-}
-
-.area-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  transition: transform .2s, box-shadow .2s;
-  animation: cardIn .45s cubic-bezier(.16,1,.3,1) both;
-}
-@keyframes cardIn { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
-.area-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.area-card.updated { animation: cardPop .45s ease both; }
-@keyframes cardPop {
-  0%   { transform: scale(1.015); box-shadow: 0 0 0 3px rgba(26,44,91,.15); }
-  100% { transform: scale(1);     box-shadow: var(--shadow); }
-}
-
-/* Colored top band */
-.card-band { height: 5px; transition: background .4s; }
-
-.card-content { padding: 20px; }
-
-.card-area-name {
-  font-family: var(--display);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--navy);
-  margin-bottom: 16px;
-  line-height: 1.2;
-}
-
-/* Fraction row */
-.frac-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  gap: 10px;
-}
-
-.frac-big {
-  font-family: var(--mono);
-  font-size: 36px;
-  font-weight: 500;
-  line-height: 1;
-  transition: color .4s;
-}
-
-.frac-denom {
-  font-family: var(--mono);
-  font-size: 18px;
-  color: var(--muted);
-}
-
-.avail-box { text-align: right; }
-
-.avail-num {
-  font-family: var(--mono);
-  font-size: 38px;
-  font-weight: 500;
-  line-height: 1;
-  transition: color .4s;
-}
-
-.avail-key {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .08em;
-}
-
-/* Progress track */
-.prog-track {
-  height: 8px;
-  background: var(--s2);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-bottom: 14px;
-}
-
-.prog-fill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width .7s cubic-bezier(.16,1,.3,1), background .4s;
-}
-
-/* Status badge */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-family: var(--body);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 11px;
-  border-radius: 5px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  transition: all .3s;
-}
-.badge-green { background: var(--green-b); color: var(--green); }
-.badge-amber { background: var(--amber-b); color: var(--amber); }
-.badge-red   { background: var(--red-b);   color: var(--red);   }
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--s2);
-}
-
-.card-time {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--dim);
-}
-
-.fill-pct {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 500;
-  transition: color .4s;
-}
-
-/* ─── Empty / error states ────────────────────────────── */
-.state-box {
-  background: var(--surface);
-  border: 2px dashed var(--border);
-  border-radius: var(--r);
-  padding: 60px 20px;
-  text-align: center;
-  color: var(--muted);
-}
-.state-box .icon { font-size: 40px; display: block; margin-bottom: 14px; }
-.state-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
-
-/* ─── Footer ──────────────────────────────────────────── */
-footer {
-  background: var(--navy-dark);
-  border-top: 3px solid var(--gold);
-  padding: 14px 24px;
-  text-align: center;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: rgba(255,255,255,.35);
-  letter-spacing: .03em;
-}
-
-/* ─── Responsive ──────────────────────────────────────── */
-@media (max-width: 640px) {
-  .site-name          { font-size: 32px; }
-  .total-card .big-num { font-size: 52px; }
-  .header-inner       { flex-direction: column; align-items: flex-start; }
-  .header-status-row  { justify-content: flex-start; }
-  .content,.header-inner { padding-left: 16px; padding-right: 16px; }
+@media(max-width:768px){
+  .site-name{font-size:36px;}
+  .lots-overview .big-num{font-size:60px;}
+  .lots-overview{padding:24px;align-items:flex-start;}
+  .header-inner{padding:24px 0;}
+  .academic-frame{padding:20px;border-width:0;box-shadow:none;background:transparent;}
+  .academic-frame::before{display:none;}
+  .gate-panel-inner{padding:18px 20px;gap:18px;}
+  .gate-panel-val{font-size:26px;}
+  .sec-title{font-size:20px;}
 }
 </style>
 </head>
 <body>
 
-<!-- ── Header ── -->
 <header>
   <div class="header-inner">
+    <div class="sec-head2"><h3>Xavier University</h3></div>
     <div class="site-name">Park<span>Nav</span></div>
-    <div class="sec-head2"><h3>X.U. COLLEGE CAMPUS</h3></div>
-    <div class="site-sub">Real-time Parking Availability</div>
+    <div class="site-sub">Ateneo de Cagayan — Campus Parking System</div>
     <div class="header-status-row">
       <div class="hdr-pill" id="status-pill">
         <div class="live-dot" id="live-dot"></div>
         <span id="status-text">Connecting…</span>
       </div>
-      <div id="next-refresh">—</div>
-      <div class="hdr-pill" id="msg-pill">0 total messages</div>
+      <div id="next-refresh">3s</div>
+      <div class="hdr-pill" id="msg-pill">Initializing...</div>
+      <div class="hdr-clock" id="live-clock">—</div>
     </div>
   </div>
 </header>
 
-
 <div class="content">
+  <div class="academic-frame">
 
-  <!-- Total summary -->
-  <div class="total-card" id="total-card">
-    <div class="big-num" id="t-avail">—</div>
-    <div class="total-details">
-      <div class="total-label">Total Available Slots</div>
-      <div style="font-size:14px;color:#7da8d8;font-weight:500">Campus Total Parking Area</div>
-      <div class="total-breakdown">
-        <div class="breakdown-item">
-          <div class="breakdown-val" id="t-occ">—</div>
-          <div class="breakdown-key">Occupied</div>
+    <!-- ══ SECTION 1: CAMPUS ENTRY — Main Gate ══ -->
+    <div class="section-label" id="gate-section-label" style="display:none;">🚧 Campus Entry — Main Gate</div>
+
+    <div class="gate-panel" id="gate-strip" style="display:none;">
+      <div class="gate-panel-inner">
+        <div class="gate-panel-left">
+          <div class="gate-panel-title">XU Main Gate</div>
+          <div class="gate-panel-sub" id="gate-last-updated">Waiting for gate sensor...</div>
         </div>
-        <div class="breakdown-item">
-          <div class="breakdown-val" id="t-cap">—</div>
-          <div class="breakdown-key">Capacity</div>
-        </div>
-        <div class="breakdown-item">
-          <div class="breakdown-val" id="t-full" style="color:#f87171">—</div>
-          <div class="breakdown-key">Areas Full</div>
+        <div class="gate-panel-stats">
+          <div class="gate-panel-stat">
+            <div class="gate-panel-val" id="g-inside">—</div>
+            <div class="gate-panel-key">Vehicles on Campus</div>
+          </div>
+          <div class="gate-traffic-badge normal" id="g-traffic-badge">● Normal</div>
         </div>
       </div>
-      <div id="campus-last-updated" style="font-family:var(--mono);font-size:10px;color:#6080a0;margin-top:10px;letter-spacing:.02em;"></div>
     </div>
-    <div class="donut-wrap">
-      <svg width="80" height="80" viewBox="0 0 80 80">
-        <circle class="donut-bg" cx="40" cy="40" r="34"/>
-        <circle class="donut-fill" id="donut-fill" cx="40" cy="40" r="34"
-          stroke="#4ade80"
-          stroke-dasharray="213.6"
-          stroke-dashoffset="213.6"/>
-      </svg>
-      <div class="donut-label" id="donut-label">—%</div>
-    </div>
-  </div>
 
-  <!-- Area cards -->
-  <div>
-    <div class="sec-title">
-      PARKING AREAS
-      <span id="area-count">Loading…</span>
+    <!-- ══ DROP-OFF NOTE (belongs to gate, sits right below it) ══ -->
+    <div class="dropoff-note" id="dropoff-note" style="display:none;">
+      <span>ℹ️</span>
+      <div>
+        <strong>Why campus count may differ from lot totals</strong><br>
+        Vehicles that enter the main gate for drop-off only, or cars still inside the campus perimeter but not yet parked or exited, will appear in the gate count but not in any lot.
+        <span id="dropoff-delta"></span>
+      </div>
     </div>
-  </div>
-  <div id="cards-grid">
-    <div class="state-box" id="empty-state">
-      <span class="icon">🅿</span>
-      <h3>Waiting for Data</h3>
-      <p>The Apps Script URL is not yet configured in the HTML file.</p>
-    </div>
-  </div>
 
+    <!-- ══ SECTION 2: PARKING LOTS — Combined Overview ══ -->
+    <div class="section-label">🅿️ Parking Lots — Combined Overview</div>
+
+    <div class="lots-overview" id="total-card">
+      <div class="big-num" id="t-avail">—</div>
+      <div class="lots-details">
+        <div class="lots-label">Available Slots</div>
+        <div class="lots-sublabel">Across All Parking Lots</div>
+        <span class="campus-time" id="lots-last-updated">Waiting for sensor data...</span>
+        <div class="total-breakdown">
+          <div class="breakdown-item">
+            <div class="breakdown-val" id="t-occ">—</div>
+            <div class="breakdown-key">Occupied</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-val" id="t-cap">—</div>
+            <div class="breakdown-key">Total Capacity</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-val" id="t-full">—</div>
+            <div class="breakdown-key">Lots Full</div>
+          </div>
+        </div>
+      </div>
+      <div class="donut-wrap">
+        <svg width="96" height="96" viewBox="0 0 96 96">
+          <circle class="donut-bg" cx="48" cy="48" r="40"/>
+          <circle class="donut-fill" id="donut-fill" cx="48" cy="48" r="40"
+            stroke="#2ecc71" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+        </svg>
+        <div class="donut-label" id="donut-label">—%</div>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 3: INDIVIDUAL LOT BREAKDOWN ══ -->
+    <div class="sec-title-wrap">
+      <h2 class="sec-title">Lot Breakdown</h2>
+      <span class="sec-subtitle" id="area-count">Loading parking areas…</span>
+    </div>
+
+    <div id="cards-grid">
+      <div class="state-box" id="empty-state">
+        <span class="icon">🏛️</span>
+        <h3>Awaiting System Connection</h3>
+        <p style="color:var(--muted);">The system is currently connecting to the main database.</p>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <footer>
-  ParkNav Parking System &nbsp;·&nbsp;
-  <span id="footer-time">—</span>
+  Xavier University - Ateneo de Cagayan &nbsp;·&nbsp; ParkNav System &nbsp;·&nbsp;
+  <span id="footer-time">System initializing...</span>
 </footer>
 
 <script>
-// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  CONFIG
-// ════════════════════════════════════════════════════════
-
-// ▼▼▼ PASTE YOUR APPS SCRIPT URL HERE ▼▼▼
+// ════════════════════════════════════════════════════════════════
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztQwSchnUkabk56N4u_unf-EyrzS2AjwgNNolohoUJYknKCvkUsxuMEbkI1tvnR8G9/exec';
-// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-let refreshTimer = null;
-let countdown    = 3;
-let latestAreas  = {};   // { Campion Hall/Museo de Oro/Loyola House: { occupied, capacity, … } } — 3 specific areas only
-let campusTotal  = null; // { occupied, capacity, available, fillPct } — from Campus Parking message
-let campusTotalPrev = null; // previous campus snapshot for drop-off guard and timestamp tracking
+// ════════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════════
+let refreshTimer  = null;
+let countdown     = 3;
+let isFetching    = false;
 
-// Start fetching immediately if URL is set
+// latestAreas holds ONLY the three parking lots (CH, Loyola, Museum)
+// campusGate holds the main gate row separately — it is NEVER mixed into lot math
+let latestAreas   = {};   // { areaKey: { occupied, capacity, status, lastUpdated } }
+let campusGate    = null; // { occupied, capacity, lastUpdated }
+let campusGatePrev = null;
+
+// ════════════════════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════════════════════
+function tickClock() {
+  const el = document.getElementById('live-clock');
+  if (el) el.textContent = fmtTime(Date.now());
+}
+tickClock();
+setInterval(tickClock, 1000);
+
 if (SCRIPT_URL && SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
   startFetching();
 }
 
-// ════════════════════════════════════════════════════════
-//  FETCH LATEST FROM SHEET
-// ════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════════════════════════
+//  TIMER
+// ════════════════════════════════════════════════════════════════
 function startFetching() {
   clearInterval(refreshTimer);
   fetchData();
-  resetCountdown();
-  refreshTimer = setInterval(()=>{
-    countdown--;
-    document.getElementById('next-refresh').textContent = `${countdown}s`;
-    if (countdown <= 0) {
-      fetchData();
-      resetCountdown();
+  refreshTimer = setInterval(() => {
+    if (!isFetching) {
+      countdown--;
     }
+    updateCountdownDisplay();
+    if (!isFetching && countdown <= 0) fetchData();
   }, 1000);
 }
 
-function resetCountdown() {
-  countdown = 3;
-  document.getElementById('next-refresh').textContent = `${countdown}s`;
+function updateCountdownDisplay() {
+  const el = document.getElementById('next-refresh');
+  el.textContent = (countdown > 0 ? countdown : 0) + 's';
+  el.style.color = isFetching ? '#f39c12' : 'var(--gold)';
 }
 
+// ════════════════════════════════════════════════════════════════
+//  FETCH
+// ════════════════════════════════════════════════════════════════
 async function fetchData() {
-  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE' || isFetching) return;
+  isFetching = true;
   setStatusPill('loading');
+
   try {
     const res  = await fetch(SCRIPT_URL + '?action=summary', { cache: 'no-store' });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'Unknown error');
 
-    const allAreas = json.areas || {};
-
-    // Separate Campus (campus-wide total) from the 3 specific area cards
-    const prevCampusSnapshot = campusTotalPrev; // snapshot BEFORE this cycle
-    campusTotal = allAreas['Campus'] || null;
-
-    // Track per-area lastUpdated: stamp only areas whose data actually changed
+    const allAreas  = json.areas || {};
     const fetchedAt = Date.now();
     const prevAreas = latestAreas;
-    latestAreas = {};
+    latestAreas     = {};
+
+    // ── Separate gate row from parking lot rows ─────────────────
+    // The Campus row is the main gate traffic counter.
+    // It must NOT be mixed into lot availability math.
+    const gateRaw = allAreas['Campus'] || null;
+
     Object.keys(allAreas).forEach(key => {
-      if (key !== 'Campus') {
-        const fresh = allAreas[key];
-        const prev  = prevAreas[key];
-        // Carry forward the old timestamp if nothing changed; otherwise stamp now
-        const changed = !prev
-          || prev.occupied !== fresh.occupied
-          || prev.capacity !== fresh.capacity
-          || prev.status   !== fresh.status;
-        fresh.lastUpdated = changed ? fetchedAt : (prev.lastUpdated || fetchedAt);
-        latestAreas[key] = fresh;
-      }
+      if (key === 'Campus') return; // handled separately below
+
+      const fresh  = allAreas[key];
+      const prev   = prevAreas[key];
+      const changed = !prev
+        || prev.occupied !== fresh.occupied
+        || prev.capacity !== fresh.capacity
+        || prev.status   !== fresh.status;
+
+      fresh.lastUpdated = changed ? fetchedAt : (prev ? prev.lastUpdated : fetchedAt);
+
+      // Clamp to valid range
+      fresh.occupied = Math.min(Math.max(0, fresh.occupied || 0), fresh.capacity || 0);
+      latestAreas[key] = fresh;
     });
 
-    // Campus lastUpdated: stamp only if its occupied/capacity changed
-    if (campusTotal) {
-      const campusChanged = !prevCampusSnapshot
-        || prevCampusSnapshot.occupied !== campusTotal.occupied
-        || prevCampusSnapshot.capacity !== campusTotal.capacity;
-      campusTotal.lastUpdated = campusChanged ? fetchedAt : (prevCampusSnapshot ? prevCampusSnapshot.lastUpdated : fetchedAt);
+    // ── Process gate data ───────────────────────────────────────
+    if (gateRaw) {
+      const gateChanged = !campusGatePrev
+        || campusGatePrev.occupied !== gateRaw.occupied
+        || campusGatePrev.capacity !== gateRaw.capacity;
+
+      gateRaw.lastUpdated = gateChanged ? fetchedAt : (campusGatePrev ? campusGatePrev.lastUpdated : fetchedAt);
+
+      // Gate occupied = vehicles currently inside campus perimeter
+      // No upper clamp — count can exceed capacity due to drop-off vehicles
+      gateRaw.occupied = Math.max(0, gateRaw.occupied || 0);
+      campusGatePrev = campusGate ? { ...campusGate } : null;
+      campusGate = gateRaw;
+    } else {
+      campusGatePrev = campusGate ? { ...campusGate } : null;
+      campusGate     = null;
     }
-    // renderSummary uses campusTotalPrev (= prevCampusSnapshot at this point) for the drop-off guard
-    campusTotalPrev = prevCampusSnapshot;
 
-    // Use Campus message numbers for summary if available,
-    // otherwise fall back to json totals (sum of specific areas from Apps Script)
-    const totalOcc = campusTotal ? campusTotal.occupied  : (json.totalOccupied || 0);
-    const totalCap = campusTotal ? campusTotal.capacity  : (json.totalCapacity || 0);
-
-    renderSummary(totalOcc, totalCap);
-    campusTotalPrev = campusTotal ? { ...campusTotal } : null; // update for next cycle's guard
+    // ── Render ──────────────────────────────────────────────────
+    renderSummary();
+    renderGateStrip();
     renderCards();
     setStatusPill('ok');
-    document.getElementById('footer-time').textContent = 'Last updated: ' + fmtTime(Date.now());
+    document.getElementById('footer-time').textContent = 'Last sync: ' + fmtTime(Date.now());
 
   } catch(e) {
     setStatusPill('err');
     console.error('Fetch error:', e);
     showError(e.message);
+  } finally {
+    isFetching = false;
+    countdown  = 3;
+    updateCountdownDisplay();
   }
 }
 
-// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  RENDER SUMMARY
-// ════════════════════════════════════════════════════════
+//  Source of truth: the three parking lot sensors ONLY.
+//  The main gate (Campus row) is intentionally excluded here.
+// ════════════════════════════════════════════════════════════════
+function renderSummary() {
+  const lots = Object.values(latestAreas);
 
-function renderSummary(totalOcc, totalCap) {
-  // ── DROP-OFF GUARD ─────────────────────────────────────────────────────
-  // A vehicle may pass through the main gate to drop a passenger, then exit
-  // without parking in any specific lot.  When that happens the campus sensor
-  // fires an "exit" decrement, but none of the three lot sensors change.
-  // We detect this mismatch and override the campus count with the true lot sum.
-  const lotSum = Object.values(latestAreas).reduce((acc, a) => acc + (a.occupied || 0), 0);
-  const prevLotSum  = campusTotalPrev ? (campusTotalPrev._lotSum != null ? campusTotalPrev._lotSum : lotSum) : lotSum;
-  const campusDropped  = campusTotalPrev !== null && campusTotal !== null
-    && campusTotal.occupied < campusTotalPrev.occupied;
-  const lotSumChanged  = lotSum !== prevLotSum;
+  // All numbers are derived purely from the three lot sensors
+  const totalCap = lots.reduce((s, a) => s + (a.capacity || 0), 0);
+  const totalOcc = lots.reduce((s, a) => s + (a.occupied || 0), 0);
+  const avail    = Math.max(0, totalCap - totalOcc);
+  const pct      = totalCap ? Math.round((totalOcc / totalCap) * 100) : 0;
 
-  if (campusDropped && !lotSumChanged) {
-    // Campus count fell but no lot changed → drop-off event, not a real exit
-    totalOcc = lotSum;
-    if (campusTotal) campusTotal.occupied = lotSum;  // keep state consistent
-  }
-  // Store lotSum so the next cycle's guard can compare
-  if (campusTotal) campusTotal._lotSum = lotSum;
-  else if (campusTotal === null) { /* no campus sensor data yet — no guard needed */ }
-
-  // ACCOUNTING GUARD: clamp occupied so it never drops below 0 or exceeds capacity.
-  totalOcc = Math.min(Math.max(0, totalOcc), totalCap || 0);
-  const avail = Math.max(0, totalCap - totalOcc);
-  const pct   = totalCap ? Math.round((totalOcc/totalCap)*100) : 0;
-  // Count full areas from the 3 specific areas only (not Campus)
-  const full  = Object.values(latestAreas).filter(a=>a.status==='full').length;
+  // "Lots Full" = lot where every slot is taken (occupied >= capacity > 0)
+  const fullCount = lots.filter(a => a.capacity > 0 && a.occupied >= a.capacity).length;
 
   document.getElementById('t-avail').textContent = avail;
   document.getElementById('t-occ').textContent   = totalOcc;
   document.getElementById('t-cap').textContent   = totalCap;
-  document.getElementById('t-full').textContent  = full;
+  const tFullEl = document.getElementById('t-full');
+  tFullEl.textContent  = fullCount;
+  tFullEl.style.color  = fullCount > 0 ? '#e74c3c' : '#fff';
   document.getElementById('donut-label').textContent = pct + '%';
 
-  // Change 2: show main-gate (campus sensor) last-updated timestamp
-  const campusTimeEl = document.getElementById('campus-last-updated');
-  if (campusTimeEl) {
-    campusTimeEl.textContent = campusTotal && campusTotal.lastUpdated
-      ? '↻ ' + fmtTime(campusTotal.lastUpdated)
-      : '';
+  // Timestamp: most recent lot update
+  const latestTs = lots.reduce((m, a) => Math.max(m, a.lastUpdated || 0), 0);
+  const lotsTimeEl = document.getElementById('lots-last-updated');
+  if (lotsTimeEl) {
+    lotsTimeEl.textContent = latestTs
+      ? 'Last updated: ' + fmtTime(latestTs)
+      : 'Waiting for sensor data...';
   }
 
-  // Donut ring — shows occupancy
-  const circ = 213.6;
-  const offset = circ - (circ * pct / 100);
-  const fill = document.getElementById('donut-fill');
+  // Donut ring — visual clamped to 100% max regardless of actual pct
+  const circ      = 251.2;
+  const visualPct = Math.min(pct, 100);
+  const offset    = circ - (circ * visualPct / 100);
+  const fill      = document.getElementById('donut-fill');
   fill.style.strokeDashoffset = offset;
-  fill.style.stroke = pct >= 100 ? '#f87171' : pct >= 75 ? '#fbbf24' : '#4ade80';
-  // Pill shows how many specific areas are being monitored
-  const specificCount = Object.keys(latestAreas).length;
-  document.getElementById('msg-pill').textContent =
-    specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' monitored';
-}
-// ════════════════════════════════════════════════════════
-//  RENDER AREA CARDS
-// ════════════════════════════════════════════════════════
+  fill.style.stroke = pct >= 100 ? '#c0392b' : pct >= 80 ? '#d4af37' : '#27ae60';
 
-// ════════════════════════════════════════════════════════
-//  AREA DISPLAY NAME MAP
-// ════════════════════════════════════════════════════════
+  const specificCount = lots.length;
+  document.getElementById('msg-pill').textContent =
+    specificCount + ' parking lot' + (specificCount !== 1 ? 's' : '') + ' monitored';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER GATE STRIP
+//  Shows campus gate as a SEPARATE traffic indicator.
+//  Explains any delta between gate count and lot totals.
+//  Gate panel is Section 1 — above the lots overview.
+// ════════════════════════════════════════════════════════════════
+function renderGateStrip() {
+  const strip     = document.getElementById('gate-strip');
+  const noteEl    = document.getElementById('dropoff-note');
+  const deltaEl   = document.getElementById('dropoff-delta');
+  const gateUpd   = document.getElementById('gate-last-updated');
+
+  const labelEl   = document.getElementById('gate-section-label');
+
+  if (!campusGate) {
+    strip.style.display   = 'none';
+    noteEl.style.display  = 'none';
+    if (labelEl) labelEl.style.display = 'none';
+    return;
+  }
+
+  if (labelEl) labelEl.style.display = '';
+  strip.style.display = 'block';
+
+  // "Vehicles on Campus" = entered main gate, not yet exited
+  const gOcc = campusGate.occupied || 0;
+  const gCap = campusGate.capacity || 0;
+
+  document.getElementById('g-inside').textContent = gOcc;
+
+  // Traffic status — capacity is a soft baseline, not a hard ceiling
+  // Normal: <80%  |  Busy: 80–99%  |  High Traffic: 100%+
+  const badge = document.getElementById('g-traffic-badge');
+  const pct   = gCap ? (gOcc / gCap) * 100 : 0;
+  if (pct >= 100) {
+    badge.className   = 'gate-traffic-badge high';
+    badge.textContent = '● High Traffic';
+  } else if (pct >= 80) {
+    badge.className   = 'gate-traffic-badge busy';
+    badge.textContent = '● Busy Traffic';
+  } else {
+    badge.className   = 'gate-traffic-badge normal';
+    badge.textContent = '● Normal Traffic';
+  }
+
+  gateUpd.textContent = campusGate.lastUpdated
+    ? 'Last updated: ' + fmtTime(campusGate.lastUpdated)
+    : 'Waiting for gate sensor...';
+
+  // Delta: vehicles on campus perimeter vs vehicles accounted in lots
+  const lotOcc = Object.values(latestAreas).reduce((s, a) => s + (a.occupied || 0), 0);
+  const delta  = gOcc - lotOcc;
+
+  if (delta > 0) {
+    noteEl.style.display = 'flex';
+    deltaEl.innerHTML = ' Currently <strong>' + delta + ' vehicle' + (delta !== 1 ? 's' : '') + '</strong> on campus not accounted in any lot.';
+  } else {
+    noteEl.style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER AREA CARDS
+// ════════════════════════════════════════════════════════════════
 const AREA_DISPLAY_NAMES = {
-  'CH':      'Campion Hall',
-  'Museum':  'Museo de Oro',
-  'Loyola':  'Loyola House',
-  // Fallbacks for full names already used as keys
+  'CH':           'Campion Hall',
+  'Museum':       'Museo de Oro',
+  'Loyola':       'Loyola House',
   'Campion Hall': 'Campion Hall',
   'Museo de Oro': 'Museo de Oro',
   'Loyola House': 'Loyola House',
 };
-function displayName(area) {
-  return AREA_DISPLAY_NAMES[area] || area;
-}
+function displayName(area) { return AREA_DISPLAY_NAMES[area] || area; }
 
 const STATUS_META = {
-  available: { band:'#16a34a', badgeCls:'badge-green', icon:'✓', label:'Available',  numColor:'#16a34a' },
-  warning:   { band:'#d97706', badgeCls:'badge-amber', icon:'!', label:'Filling Up',  numColor:'#d97706' },
-  full:      { band:'#dc2626', badgeCls:'badge-red',   icon:'✕', label:'Full',        numColor:'#dc2626' },
+  available: { band:'#27ae60', badgeCls:'badge-green', icon:'✓', label:'Available',  numColor:'#27ae60' },
+  warning:   { band:'#d4af37', badgeCls:'badge-amber', icon:'!', label:'Filling Up',  numColor:'#b9770e' },
+  full:      { band:'#c0392b', badgeCls:'badge-red',   icon:'✕', label:'Full',        numColor:'#c0392b' },
 };
 
 function renderCards() {
   const grid  = document.getElementById('cards-grid');
-  const areas = Object.keys(latestAreas); // Campion Hall, Museo de Oro, Loyola House only — Campus already excluded
+  const areas = Object.keys(latestAreas);
 
-  // Area count label — always shows specific areas, not Campus
-  const specificCount = areas.length;
   document.getElementById('area-count').textContent =
-    specificCount + ' specific area' + (specificCount !== 1 ? 's' : '') + ' (Campion Hall · Museo de Oro · Loyola House)';
+    areas.length + ' parking area' + (areas.length !== 1 ? 's' : '') + ' monitored';
 
-  // Remove empty state
   const empty = document.getElementById('empty-state');
   if (empty && areas.length > 0) empty.remove();
 
   if (areas.length === 0) {
     grid.innerHTML = `<div class="state-box" id="empty-state">
-      <span class="icon">📡</span><h3>No Data Yet</h3>
-      <p>The parking system hasn't sent any messages yet.</p></div>`;
+      <span class="icon">📡</span><h3>No Sensor Data</h3>
+      <p style="color:var(--muted);">Awaiting communication from parking sensors.</p></div>`;
     return;
   }
 
-  areas.forEach((area, i) => {
-    const d    = latestAreas[area];
-    // ACCOUNTING GUARD: clamp occupied per area — if a car was denied entry (status=full,
-    // no entry logged) and later an exit signal arrives, occupied must not go negative.
-    // Also cap at capacity so over-capacity entries don't break the display.
-    d.occupied = Math.min(Math.max(0, d.occupied || 0), d.capacity || 0);
-    const meta = STATUS_META[d.status] || STATUS_META.available;
-    const id   = 'acard-' + area.replace(/[^a-z0-9]/gi,'_');
-    const pct  = d.capacity ? Math.round((d.occupied/d.capacity)*100) : 100;
-    const avail= Math.max(0, d.capacity - d.occupied);
+  areas.forEach(area => {
+    const d   = latestAreas[area];
+    const cap = d.capacity || 0;
+    const occ = d.occupied; // already clamped in fetchData
+    const pct = cap ? Math.round((occ / cap) * 100) : 100;
+
+    // Status derived purely from occupancy percentage — consistent with summary card
+    const status = pct >= 100 ? 'full' : pct >= 85 ? 'warning' : 'available';
+    const meta   = STATUS_META[status];
+    const id     = 'acard-' + area.replace(/[^a-z0-9]/gi, '_');
+    const avail  = Math.max(0, cap - occ);
     const existing = document.getElementById(id);
+    const timeStr  = fmtTime(d.lastUpdated || Date.now());
 
     if (existing) {
-      // Update existing card
-      existing.querySelector('.card-band').style.background     = meta.band;
-      existing.querySelector('.frac-big').textContent           = d.occupied;
-      existing.querySelector('.frac-big').style.fontSize        = '26px';
-      existing.querySelector('.frac-denom').textContent         = '/' + d.capacity;
-      existing.querySelector('.frac-denom').style.fontSize      = '16px';
-      existing.querySelector('.frac-big').style.color           = meta.numColor;
-      existing.querySelector('.avail-num').textContent          = avail;
-      existing.querySelector('.avail-num').style.color          = meta.numColor;
-      existing.querySelector('.prog-fill').style.width          = pct + '%';
-      existing.querySelector('.prog-fill').style.background     = meta.band;
-      existing.querySelector('.status-badge').className         = `status-badge ${meta.badgeCls}`;
-      existing.querySelector('.status-badge').textContent       = `${meta.icon} ${meta.label}`;
-      existing.querySelector('.card-time').textContent          = '↻ ' + fmtTime(d.lastUpdated || Date.now());
-      existing.querySelector('.fill-pct').textContent           = pct + '% full';
-      existing.querySelector('.fill-pct').style.color           = meta.numColor;
-      existing.classList.remove('updated');
-      void existing.offsetWidth;
-      existing.classList.add('updated');
+      existing.querySelector('.card-band').style.background          = meta.band;
+      existing.querySelector('.frac-big').textContent                = occ;
+      existing.querySelector('.frac-denom').textContent              = '/' + cap;
+      existing.querySelector('.frac-big').style.color                = meta.numColor;
+      existing.querySelector('.avail-num').textContent               = avail;
+      existing.querySelector('.avail-num').style.color               = meta.numColor;
+      existing.querySelector('.prog-fill').style.width               = Math.min(pct, 100) + '%';
+      existing.querySelector('.prog-fill').style.background          = meta.band;
+      existing.querySelector('.card-area-time').textContent          = 'Last updated: ' + timeStr;
+      const badge = existing.querySelector('.status-badge');
+      badge.className   = 'status-badge ' + meta.badgeCls;
+      badge.textContent = meta.icon + ' ' + meta.label;
+      const pctEl = existing.querySelector('.fill-pct');
+      pctEl.textContent  = pct + '% full';
+      pctEl.style.color  = meta.numColor;
     } else {
-      // Build new card
       const card = document.createElement('div');
       card.className = 'area-card';
       card.id = id;
-      card.style.animationDelay = i * .1 + 's';
       card.innerHTML = `
         <div class="card-band" style="background:${meta.band}"></div>
         <div class="card-content">
-          <div class="card-area-name">${esc(displayName(area))} Area</div>
+          <div class="card-area-name">${esc(displayName(area))}</div>
+          <span class="card-area-time">Last updated: ${timeStr}</span>
           <div class="frac-row">
-            <div class="avail-box" style="text-align:left;">
-              <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">AVAILABLE</div>
+            <div class="avail-box">
+              <div class="metric-label">Available</div>
               <div class="avail-num" style="color:${meta.numColor}">${avail}</div>
-              <div style="font-size:11px;font-weight:700;color:var(--muted);">SLOTS</div>
             </div>
             <div style="text-align:right;">
-              <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;">OCCUPIED</div>
-              <span class="frac-big" style="color:${meta.numColor};font-size:26px;">${d.occupied}</span><span class="frac-denom" style="font-family:var(--mono);font-size:16px;color:var(--muted)">/${d.capacity}</span>
+              <div class="metric-label">Occupied</div>
+              <div>
+                <span class="frac-big" style="color:${meta.numColor};">${occ}</span>
+                <span class="frac-denom">/${cap}</span>
+              </div>
             </div>
           </div>
           <div class="prog-track">
-            <div class="prog-fill" style="width:${pct}%;background:${meta.band}"></div>
+            <div class="prog-fill" style="width:${Math.min(pct,100)}%;background:${meta.band}"></div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <span class="status-badge ${meta.badgeCls}">${meta.icon} ${meta.label}</span>
             <span class="fill-pct" style="color:${meta.numColor}">${pct}% full</span>
-          </div>
-          <div class="card-footer">
-            <div class="card-time">↻ ${fmtTime(d.lastUpdated || Date.now())}</div>
-          
-		  <!-- <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">via Google Sheet</div> -->
           </div>
         </div>`;
       grid.appendChild(card);
@@ -795,25 +628,26 @@ function renderCards() {
   });
 }
 
-// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  STATUS PILL
-// ════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════════════════════════
 function setStatusPill(state) {
   const pill = document.getElementById('status-pill');
   const dot  = document.getElementById('live-dot');
   const txt  = document.getElementById('status-text');
   pill.className = 'hdr-pill';
+  txt.textContent = 'System Online';
   if (state === 'ok') {
-    txt.textContent = 'Live';
-    dot.style.background = '#4ade80';
+    dot.style.background  = '#2ecc71';
+    dot.style.boxShadow   = '0 0 10px #2ecc71';
   } else if (state === 'loading') {
-    txt.textContent = 'Live';
-    dot.style.background = '#60a5fa';
+    dot.style.background  = '#f39c12';
+    dot.style.boxShadow   = '0 0 10px #f39c12';
   } else {
-    pill.className = 'hdr-pill red';
-    txt.textContent = 'Connection Error';
-    dot.style.background = '#f87171';
+    pill.className        = 'hdr-pill red';
+    txt.textContent       = 'Connection Lost';
+    dot.style.background  = '#e74c3c';
+    dot.style.boxShadow   = '0 0 10px #e74c3c';
   }
 }
 
@@ -821,21 +655,33 @@ function showError(msg) {
   const grid = document.getElementById('cards-grid');
   if (Object.keys(latestAreas).length === 0) {
     grid.innerHTML = `<div class="state-box">
-      <span class="icon">⚠️</span>
-      <h3>Could not load data</h3>
-      <p style="color:var(--muted);font-size:13px;margin-top:6px">${esc(msg)}<br><br>Check your Apps Script URL and make sure the deployment is set to <strong>"Anyone"</strong>.</p>
-    </div>`;
+      <span class="icon">⚠️</span><h3>Connection Error</h3>
+      <p style="color:var(--muted);font-size:14px;margin-top:10px">
+        ${esc(msg)}<br><br>
+        Please verify the Apps Script URL and ensure deployment access is set to "Anyone".
+      </p></div>`;
   }
+  // Always update footer to signal the failure time
+  document.getElementById('footer-time').textContent = 'Connection failed at ' + fmtTime(Date.now());
 }
 
-// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  UTILS
-// ════════════════════════════════════════════════════════
-
+// ════════════════════════════════════════════════════════════════
 function fmtTime(ts) {
-  return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const d    = new Date(ts);
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const yyyy = d.getFullYear();
+  const mon  = MONTHS[d.getMonth()];
+  const day  = d.getDate();
+  const hh24 = d.getHours();
+  const mm   = String(d.getMinutes()).padStart(2,'0');
+  const ss   = String(d.getSeconds()).padStart(2,'0');
+  const ampm = hh24 >= 12 ? 'PM' : 'AM';
+  const hh12 = String(hh24 % 12 || 12).padStart(2,'0');
+  return `${yyyy}-${mon}-${day}, ${hh12}:${mm}:${ss} ${ampm}`;
 }
-function esc(s){
+function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 </script>
