@@ -358,7 +358,6 @@ async function fetchData() {
 
     const allAreas  = json.areas || {};
     const fetchedAt = Date.now();
-    const prevAreas = latestAreas;
     latestAreas     = {};
 
     // ── Separate gate row from parking lot rows ─────────────────
@@ -370,13 +369,13 @@ async function fetchData() {
       if (key === 'Campus') return; // handled separately below
 
       const fresh  = allAreas[key];
-      const prev   = prevAreas[key];
-      const changed = !prev
-        || prev.occupied !== fresh.occupied
-        || prev.capacity !== fresh.capacity
-        || prev.status   !== fresh.status;
 
-      fresh.lastUpdated = changed ? fetchedAt : (prev ? prev.lastUpdated : fetchedAt);
+      // lastUpdated comes from Google Sheets — the exact moment
+      // the SMS arrived and was written to the Sheet by the admin app.
+      // Apps Script sends it as an ISO 8601 string (e.g. "2026-03-04T09:35:33.000Z").
+      // Fall back to fetchedAt only if the Sheet field is missing.
+      const sheetTs = fresh.lastUpdated ? Date.parse(fresh.lastUpdated) : NaN;
+      fresh.lastUpdated = isNaN(sheetTs) ? fetchedAt : sheetTs;
 
       // Clamp to valid range
       fresh.occupied = Math.min(Math.max(0, fresh.occupied || 0), fresh.capacity || 0);
@@ -385,11 +384,10 @@ async function fetchData() {
 
     // ── Process gate data ───────────────────────────────────────
     if (gateRaw) {
-      const gateChanged = !campusGatePrev
-        || campusGatePrev.occupied !== gateRaw.occupied
-        || campusGatePrev.capacity !== gateRaw.capacity;
-
-      gateRaw.lastUpdated = gateChanged ? fetchedAt : (campusGatePrev ? campusGatePrev.lastUpdated : fetchedAt);
+      // lastUpdated comes from Google Sheets — the exact moment
+      // the SMS arrived and was written to the Sheet by the admin app.
+      const gateSheetTs = gateRaw.lastUpdated ? Date.parse(gateRaw.lastUpdated) : NaN;
+      gateRaw.lastUpdated = isNaN(gateSheetTs) ? fetchedAt : gateSheetTs;
 
       // Gate occupied = vehicles currently inside campus perimeter
       // No upper clamp — count can exceed capacity due to drop-off vehicles
