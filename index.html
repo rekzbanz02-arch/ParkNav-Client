@@ -180,6 +180,217 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
   .gate-panel-val{font-size:26px;}
   .sec-title{font-size:20px;}
 }
+
+/* ── Help Button ── */
+#help-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 900;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--navy-dark);
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(13,27,51,.45);
+  transition: background .2s, transform .15s, box-shadow .2s;
+  line-height: 1;
+}
+#help-btn:hover {
+  background: var(--gold);
+  color: var(--navy-dark);
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(212,175,55,.4);
+}
+
+/* ── Help Modal Overlay ── */
+#help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(7,16,31,.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s;
+}
+#help-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── Help Modal Box ── */
+#help-modal {
+  background: var(--surface);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  box-shadow: 0 16px 48px rgba(13,27,51,.4);
+  width: 100%;
+  max-width: 580px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(18px) scale(.97);
+  transition: transform .28s cubic-bezier(.16,1,.3,1);
+  overflow: hidden;
+}
+#help-overlay.open #help-modal {
+  transform: translateY(0) scale(1);
+}
+
+.help-modal-header {
+  background: var(--navy-dark);
+  border-bottom: 3px solid var(--gold);
+  padding: 20px 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.help-modal-title {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.help-modal-title span { color: var(--gold); }
+.help-modal-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+  margin-top: 4px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+#help-close {
+  background: none;
+  border: 1px solid rgba(212,175,55,.3);
+  border-radius: 4px;
+  color: rgba(255,255,255,.6);
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s;
+  line-height: 1;
+}
+#help-close:hover {
+  background: rgba(212,175,55,.15);
+  color: #fff;
+  border-color: var(--gold);
+}
+
+.help-modal-body {
+  overflow-y: auto;
+  padding: 24px;
+  flex: 1;
+}
+
+/* ── Help sections ── */
+.help-section {
+  margin-bottom: 24px;
+}
+.help-section:last-child { margin-bottom: 0; }
+
+.help-section-title {
+  font-family: var(--body);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.help-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--s2);
+}
+
+.help-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.help-item:last-child { margin-bottom: 0; }
+.help-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+  margin-top: 1px;
+}
+.help-item-body {}
+.help-item-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 2px;
+}
+.help-item-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* Status badge pills inside help */
+.help-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 3px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.help-badge.green  { background: var(--green-b);  color: var(--green);  border: 1px solid rgba(25,111,61,.2); }
+.help-badge.amber  { background: var(--amber-b);  color: var(--amber);  border: 1px solid rgba(185,119,14,.2); }
+.help-badge.red    { background: var(--red-b);    color: var(--red);    border: 1px solid rgba(146,43,33,.2); }
+
+.help-modal-footer {
+  padding: 14px 24px;
+  border-top: 1px solid var(--s2);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+  text-align: center;
+  flex-shrink: 0;
+  letter-spacing: .04em;
+}
+
+@media(max-width:480px){
+  #help-btn { bottom: 20px; right: 20px; width: 38px; height: 38px; font-size: 16px; }
+  .help-modal-body { padding: 18px; }
+  .help-modal-header { padding: 16px 18px 14px; }
+}
 </style>
 </head>
 <body>
@@ -288,6 +499,193 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
   Xavier University - Ateneo de Cagayan &nbsp;·&nbsp; ParkNav System &nbsp;·&nbsp;
   <span id="footer-time">System initializing...</span>
 </footer>
+
+<!-- ── Help Button ── -->
+<button id="help-btn" aria-label="Help" title="Help">?</button>
+
+<!-- ── Help Modal ── -->
+<div id="help-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div id="help-modal">
+
+    <div class="help-modal-header">
+      <div>
+        <div class="help-modal-title" id="help-title">Park<span>Nav</span> — User Guide</div>
+        <div class="help-modal-sub">Xavier University · Ateneo de Cagayan</div>
+      </div>
+      <button id="help-close" aria-label="Close help">✕</button>
+    </div>
+
+    <div class="help-modal-body">
+
+      <!-- 1. What is ParkNav -->
+      <div class="help-section">
+        <div class="help-section-title">🅿️ What is ParkNav</div>
+        <div class="help-item">
+          <div class="help-icon">📡</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Real-Time Parking Monitor</div>
+            <div class="help-item-desc">ParkNav shows live parking availability across all XU campus lots. Data is pulled automatically from physical sensors every few seconds — no manual refresh needed.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Reading the Header -->
+      <div class="help-section">
+        <div class="help-section-title">🔝 Header Indicators</div>
+        <div class="help-item">
+          <div class="help-icon">🟢</div>
+          <div class="help-item-body">
+            <div class="help-item-label">System Online / Connection Lost</div>
+            <div class="help-item-desc">The pulsing dot shows system status. <strong>Green</strong> = live data flowing normally. <strong>Red</strong> = sensor connection lost; displayed numbers may be outdated.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">⏱️</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Countdown Timer (e.g. "3s")</div>
+            <div class="help-item-desc">Counts down to the next automatic data refresh. It resets to 3 seconds after each successful fetch. <strong>Orange</strong> color means a fetch is currently in progress.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🕐</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Live Clock</div>
+            <div class="help-item-desc">Shows the current local time, updated every second. Use this to cross-check the "last updated" timestamps on each card.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Main Gate Panel -->
+      <div class="help-section">
+        <div class="help-section-title">🚧 Campus Entry — Main Gate</div>
+        <div class="help-item">
+          <div class="help-icon">🚗</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Vehicles on Campus</div>
+            <div class="help-item-desc">Total vehicles counted through the XU main gate that have not yet exited. This is a <em>campus-wide perimeter count</em>, not a lot count.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🚦</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Traffic Badge</div>
+            <div class="help-item-desc">
+              Indicates current gate congestion level:<br>
+              <span class="help-badge green">● Normal</span> — below 80% of baseline &nbsp;
+              <span class="help-badge amber">● Busy</span> — 80–99% &nbsp;
+              <span class="help-badge red">● High Traffic</span> — 100%+
+            </div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">ℹ️</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Why Gate Count ≠ Lot Totals</div>
+            <div class="help-item-desc">Vehicles doing <strong>drop-off only</strong>, or cars still moving within campus, appear in the gate count but are not yet assigned to a parking lot. This is normal and expected.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Combined Overview -->
+      <div class="help-section">
+        <div class="help-section-title">📊 Parking Lots — Combined Overview</div>
+        <div class="help-item">
+          <div class="help-icon">🔢</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Large Number = Available Slots</div>
+            <div class="help-item-desc">The big figure on the left is the total number of free parking slots across <em>all</em> monitored lots right now.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🍩</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Donut Chart</div>
+            <div class="help-item-desc">Visually shows how full campus parking is overall. The ring turns <strong style="color:var(--green)">green</strong> when space is available, <strong style="color:var(--amber)">amber</strong> when filling up, and <strong style="color:var(--red)">red</strong> when near or at capacity.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">📋</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Occupied / Total Capacity / Lots Full</div>
+            <div class="help-item-desc">Quick at-a-glance breakdown. <strong>Lots Full</strong> turns red when one or more parking areas have zero available slots.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Individual Lot Cards -->
+      <div class="help-section">
+        <div class="help-section-title">🗂️ Individual Lot Cards</div>
+        <div class="help-item">
+          <div class="help-icon">🏛️</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Campion Hall · Museo de Oro · Loyola House</div>
+            <div class="help-item-desc">One card per monitored parking area. Each shows available slots, total occupied vs. capacity, a fill bar, and a status badge.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">📶</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Color Bar at Top of Card</div>
+            <div class="help-item-desc">A quick visual cue: <strong style="color:var(--green)">green</strong> = slots free, <strong style="color:var(--amber)">amber</strong> = filling up (≥85% full), <strong style="color:var(--red)">red</strong> = completely full (100%).</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🏷️</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Status Badges</div>
+            <div class="help-item-desc">
+              <span class="help-badge green">✓ Available</span> — slots open &nbsp;
+              <span class="help-badge amber">! Filling Up</span> — ≥85% occupied &nbsp;
+              <span class="help-badge red">✕ Full</span> — no slots left
+            </div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">🕓</div>
+          <div class="help-item-body">
+            <div class="help-item-label">Last Updated Timestamp</div>
+            <div class="help-item-desc">Shows exactly when the sensor last sent data for that specific lot. If this time is several minutes old, the sensor for that area may be temporarily offline.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Tips -->
+      <div class="help-section">
+        <div class="help-section-title">💡 Tips for Finding Parking</div>
+        <div class="help-item">
+          <div class="help-icon">1️⃣</div>
+          <div class="help-item-body">
+            <div class="help-item-desc">Check the <strong>Combined Overview</strong> first to see if any slots are available before heading in.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">2️⃣</div>
+          <div class="help-item-body">
+            <div class="help-item-desc">Use the <strong>individual lot cards</strong> to identify which specific area has the most open slots.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">3️⃣</div>
+          <div class="help-item-body">
+            <div class="help-item-desc">If the <strong>Gate shows High Traffic</strong> but lots show availability, there may be vehicles still in transit — expect slight delays.</div>
+          </div>
+        </div>
+        <div class="help-item">
+          <div class="help-icon">4️⃣</div>
+          <div class="help-item-body">
+            <div class="help-item-desc">Data refreshes automatically every ~3 seconds. There is no need to reload the page.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /help-modal-body -->
+
+    <div class="help-modal-footer">
+      ParkNav · Xavier University – Ateneo de Cagayan &nbsp;·&nbsp; For issues, contact the system <a href="https://m.me/rekzbanz" target="_blank" rel="noopener noreferrer" style="color:navy;text-decoration:underline;text-underline-offset:2px;transition:opacity .15s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">administrator</a>.
+    </div>
+
+  </div><!-- /help-modal -->
+</div><!-- /help-overlay -->
 
 <script>
 // ════════════════════════════════════════════════════════════════
@@ -519,7 +917,7 @@ function renderGateStrip() {
 
   if (delta > 0) {
     noteEl.style.display = 'flex';
-    deltaEl.innerHTML = ' Currently <strong>' + delta + ' vehicle' + (delta !== 1 ? 's' : '') + '</strong> on campus not accounted in any designated parking lot.';
+    deltaEl.innerHTML = ' Currently <strong>' + delta + ' vehicle' + (delta !== 1 ? 's' : '') + '</strong> on campus not accounted in any lot.';
   } else {
     noteEl.style.display = 'none';
   }
@@ -682,6 +1080,39 @@ function fmtTime(ts) {
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// ════════════════════════════════════════════════════════════════
+//  HELP MODAL
+// ════════════════════════════════════════════════════════════════
+(function() {
+  const overlay = document.getElementById('help-overlay');
+  const btn     = document.getElementById('help-btn');
+  const closeBtn= document.getElementById('help-close');
+
+  function openHelp() {
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    closeBtn.focus();
+  }
+  function closeHelp() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    btn.focus();
+  }
+
+  btn.addEventListener('click', openHelp);
+  closeBtn.addEventListener('click', closeHelp);
+
+  // Close on overlay backdrop click
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeHelp();
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeHelp();
+  });
+})();
 </script>
 </body>
 </html>
