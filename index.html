@@ -547,9 +547,9 @@ footer{
 
     <div class="help-modal-body">
 
-      <!-- 1. What is ParkNav -->
+      <!-- 1. What is XUrPark -->
       <div class="help-section">
-        <div class="help-section-title">🅿️ What is ParkNav</div>
+        <div class="help-section-title">🅿️ What is XUrPark</div>
         <div class="help-item">
           <div class="help-icon" aria-hidden="true">📡</div>
           <div>
@@ -1175,7 +1175,7 @@ function esc(s) {
   const metaTheme = document.getElementById('meta-theme-color');
 
   let isLight = false;
-  try { isLight = localStorage.getItem('parknav-theme') === 'light'; } catch (_) {}
+  try { isLight = localStorage.getItem('XUrPark-theme') === 'light'; } catch (_) {}
 
   function applyTheme(light) {
     if (light) {
@@ -1204,7 +1204,7 @@ function esc(s) {
   themeBtn.addEventListener('click', () => {
     isLight = !isLight;
     applyTheme(isLight);
-    try { localStorage.setItem('parknav-theme', isLight ? 'light' : 'dark'); } catch (_) {}
+    try { localStorage.setItem('XUrPark-theme', isLight ? 'light' : 'dark'); } catch (_) {}
     // Spin animation restart
     themeBtn.classList.remove('spinning');
     void themeBtn.offsetWidth;
