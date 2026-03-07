@@ -3,13 +3,41 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<meta name="theme-color" content="#07101f"/>
+<meta name="theme-color" content="#05091a" id="meta-theme-color"/>
 <title>ParkNav — Parking Status</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🅿️</text></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Source+Sans+3:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+/* ══════════════════════════════════════════════════════════
+   DESIGN TOKENS — Dark (default) & Light overrides
+   ══════════════════════════════════════════════════════════ */
 :root {
+  --navy:      #090e2a;
+  --navy-dark: #05091a;
+  --gold:      #f0b429;
+  --gold-lt:   #ffd166;
+  --bg:        #05091a;
+  --surface:   #090e2a;
+  --s2:        #0d1235;
+  --border:    #f0b429;
+  --text:      #e8ecf8;
+  --muted:     #8e9fd4;
+  --dim:       #6070a8;
+  --green:     #1a7a45;
+  --green-b:   #051a0d;
+  --amber:     #d97706;
+  --amber-b:   #2a220d;
+  --red:       #b91c1c;
+  --red-b:     #2a0d0d;
+  --mono:      'DM Mono', monospace;
+  --display:   'Playfair Display', serif;
+  --body:      'Source Sans 3', sans-serif;
+  --r:         4px;
+  --shadow:    0 4px 12px rgba(0,0,0,.5);
+  --shadow-md: 0 8px 24px rgba(0,0,0,.6);
+}
+:root.light-mode {
   --navy:      #0d1b33;
   --navy-dark: #07101f;
   --gold:      #d4af37;
@@ -27,17 +55,38 @@
   --amber-b:   #fef9e7;
   --red:       #922b21;
   --red-b:     #fdedec;
-  --mono:      'DM Mono', monospace;
-  --display:   'Playfair Display', serif;
-  --body:      'Source Sans 3', sans-serif;
-  --r:         4px;
   --shadow:    0 4px 12px rgba(13,27,51,.15);
   --shadow-md: 0 8px 24px rgba(13,27,51,.2);
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:15px;line-height:1.6;}
 
-/* ── Header ── */
+/* ══════════════════════════════════════════════════════════
+   RESET & BASE
+   ══════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:var(--body);
+  background:radial-gradient(ellipse at 20% 0%,#0e1845 0%,#05091a 60%);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  font-size:15px;line-height:1.6;
+  transition:background .3s,color .3s;
+}
+:root.light-mode body { background:var(--bg); }
+
+/* Scanline overlay — dark mode only */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
+  pointer-events:none;z-index:9998;
+  opacity:1;transition:opacity .3s;
+}
+:root.light-mode body::after{opacity:0;}
+
+/* ══════════════════════════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════════════════════════ */
 header{background:var(--navy-dark);padding:0;position:relative;overflow:hidden;border-bottom:6px solid var(--gold);}
 header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0px,rgba(255,255,255,.02) 1px,transparent 1px,transparent 80px);pointer-events:none;}
 .header-inner{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:36px 24px 28px;}
@@ -47,18 +96,23 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .site-sub{font-size:14px;font-weight:500;color:rgba(255,255,255,.7);letter-spacing:0.5px;}
 .header-status-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;}
 .hdr-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.3);border-radius:4px;padding:8px 16px;font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.8);}
-.live-dot{width:8px;height:8px;border-radius:50%;background:#2ecc71;box-shadow:0 0 10px #2ecc71;animation:pulse 2s ease-in-out infinite;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);box-shadow:none;transition:background .3s,box-shadow .3s;animation:pulse 2s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 .hdr-pill.red .live-dot{background:#e74c3c;box-shadow:0 0 10px #e74c3c;}
 #next-refresh{font-family:var(--mono);font-size:12px;color:var(--gold);padding:6px 12px;border:1px dashed rgba(212,175,55,0.4);border-radius:4px;min-width:2.8em;text-align:center;}
 .hdr-clock{font-family:var(--mono);font-size:12px;color:var(--gold-lt);padding:6px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.2);border-radius:4px;letter-spacing:.03em;opacity:.9;}
 
-/* ── Layout ── */
+/* ══════════════════════════════════════════════════════════
+   LAYOUT
+   ══════════════════════════════════════════════════════════ */
 .content{flex:1;max-width:1100px;width:100%;margin:0 auto;padding:40px 24px;display:flex;flex-direction:column;}
 .academic-frame{background:var(--surface);border:1px solid var(--border);padding:32px;box-shadow:var(--shadow);border-radius:var(--r);position:relative;}
 .academic-frame::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--gold);border-top-left-radius:var(--r);border-top-right-radius:var(--r);}
+:root:not(.light-mode) .academic-frame{background:transparent;border-color:#1c2a6b;box-shadow:none;}
 
-/* ── Section wrapper labels ── */
+/* ══════════════════════════════════════════════════════════
+   SECTION LABELS
+   ══════════════════════════════════════════════════════════ */
 .section-label{
   display:flex;align-items:center;gap:10px;
   font-family:var(--body);font-size:11px;font-weight:700;
@@ -67,23 +121,13 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 }
 .section-label::after{content:'';flex:1;height:1px;background:var(--s2);}
 
-/* ── Campus Gate Panel (top, promoted) ── */
-.gate-panel{
-  background:var(--navy);
-  box-shadow:inset 0 0 0 1px rgba(212,175,55,0.35);
-  border-radius:var(--r);
-  overflow:hidden;
-  margin-bottom:12px;
-}
-.gate-panel-inner{
-  display:flex;align-items:center;gap:28px;flex-wrap:wrap;
-  padding:22px 28px;
-}
+/* ══════════════════════════════════════════════════════════
+   GATE PANEL
+   ══════════════════════════════════════════════════════════ */
+.gate-panel{background:var(--navy);box-shadow:inset 0 0 0 1px rgba(212,175,55,0.35);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.gate-panel-inner{display:flex;align-items:center;gap:28px;flex-wrap:wrap;padding:22px 28px;}
 .gate-panel-left{flex:1;min-width:180px;}
-.gate-panel-title{
-  font-family:var(--display);font-size:15px;font-weight:800;
-  color:#fff;letter-spacing:0.03em;margin-bottom:2px;
-}
+.gate-panel-title{font-family:var(--display);font-size:15px;font-weight:800;color:#fff;letter-spacing:0.03em;margin-bottom:2px;}
 .gate-panel-sub{font-family:var(--mono);font-size:11px;color:var(--gold-lt);opacity:.8;}
 .gate-panel-stats{display:flex;gap:28px;flex-wrap:wrap;align-items:center;}
 .gate-panel-stat{display:flex;flex-direction:column;align-items:center;gap:2px;}
@@ -94,7 +138,9 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .gate-traffic-badge.busy{background:rgba(185,119,14,0.25);color:var(--gold-lt);border:1px solid rgba(212,175,55,0.4);}
 .gate-traffic-badge.high{background:rgba(146,43,33,0.3);color:#f5a89a;border:1px solid rgba(192,57,43,0.4);}
 
-/* ── Drop-off note ── */
+/* ══════════════════════════════════════════════════════════
+   DROP-OFF NOTE
+   ══════════════════════════════════════════════════════════ */
 .dropoff-note{
   display:flex;align-items:flex-start;gap:10px;
   font-size:12px;color:var(--muted);
@@ -104,16 +150,18 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
   border-radius:0 var(--r) var(--r) 0;
   margin-bottom:20px;
 }
+:root:not(.light-mode) .dropoff-note{background:#1a150a;}
 .dropoff-note strong{color:var(--amber);display:inline;}
 
-/* ── Lots Overview Card ── */
+/* ══════════════════════════════════════════════════════════
+   LOTS OVERVIEW
+   ══════════════════════════════════════════════════════════ */
 .lots-overview{
   background:var(--navy);padding:28px 32px;
   display:flex;align-items:center;gap:32px;flex-wrap:wrap;
   box-shadow:inset 0 0 0 1px var(--gold);
   position:relative;overflow:hidden;
-  border-radius:var(--r);
-  margin-bottom:20px;
+  border-radius:var(--r);margin-bottom:20px;
 }
 .lots-overview .big-num{font-family:var(--display);font-size:80px;font-weight:800;color:var(--gold);line-height:1;flex-shrink:0;letter-spacing:-2px;}
 .lots-details{flex:1;min-width:220px;}
@@ -125,27 +173,45 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .breakdown-val{font-family:var(--mono);font-size:24px;font-weight:500;color:#fff;}
 .breakdown-key{font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.1em;text-transform:uppercase;}
 
-/* ── Donut ── */
+/* ══════════════════════════════════════════════════════════
+   DONUT CHART
+   ══════════════════════════════════════════════════════════ */
 .donut-wrap{flex-shrink:0;position:relative;width:96px;height:96px;}
 .donut-wrap svg{transform:rotate(-90deg);}
 .donut-bg{fill:none;stroke:rgba(255,255,255,.1);stroke-width:8;}
 .donut-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.16,1,.3,1),stroke .4s;}
 .donut-label{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:16px;font-weight:500;color:#fff;}
 
-/* ── Section title ── */
+/* ══════════════════════════════════════════════════════════
+   LOT BREAKDOWN TITLE
+   ══════════════════════════════════════════════════════════ */
 .sec-title-wrap{text-align:center;margin-bottom:24px;margin-top:32px;position:relative;}
 .sec-title-wrap::after{content:'';display:block;width:60px;height:3px;background:var(--gold);margin:12px auto 0;}
-.sec-title{font-family:var(--display);font-size:22px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:1px;}
+.sec-title{font-family:var(--display);font-size:22px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:1px;}
+:root.light-mode .sec-title{color:var(--navy);}
 .sec-subtitle{font-family:var(--body);font-size:14px;font-weight:600;color:var(--muted);margin-top:6px;display:block;}
 
-/* ── Area cards ── */
+/* ══════════════════════════════════════════════════════════
+   AREA CARDS
+   ══════════════════════════════════════════════════════════ */
 #cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;}
-.area-card{background:var(--surface);border:1px solid rgba(13,27,51,0.1);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;animation:cardIn .45s cubic-bezier(.16,1,.3,1) both;position:relative;}
+.area-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform .2s,box-shadow .2s;
+  animation:cardIn .45s cubic-bezier(.16,1,.3,1) both;
+  position:relative;
+}
+:root.light-mode .area-card{border-color:rgba(13,27,51,0.1);}
+:root:not(.light-mode) .area-card{box-shadow:0 4px 20px rgba(0,0,0,.5);}
 @keyframes cardIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 .area-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);}
 .card-band{height:6px;transition:background .4s;}
 .card-content{padding:24px;}
-.card-area-name{font-family:var(--display);font-size:22px;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.2;}
+.card-area-name{font-family:var(--display);font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;line-height:1.2;}
+:root.light-mode .card-area-name{color:var(--navy);}
 .card-area-time{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:20px;display:block;}
 .frac-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;gap:12px;}
 .frac-big{font-family:var(--mono);font-size:32px;font-weight:500;line-height:1;transition:color .4s;}
@@ -158,238 +224,183 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .status-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--body);font-size:12px;font-weight:700;padding:6px 14px;border-radius:3px;letter-spacing:.05em;text-transform:uppercase;transition:all .3s;}
 .badge-green{background:var(--green-b);color:var(--green);border:1px solid rgba(25,111,61,0.2);}
 .badge-amber{background:var(--amber-b);color:var(--amber);border:1px solid rgba(185,119,14,0.2);}
-.badge-red{background:var(--red-b);color:var(--red);border:1px solid rgba(146,43,33,0.2);}
+.badge-red  {background:var(--red-b);  color:var(--red);  border:1px solid rgba(146,43,33,0.2);}
+:root:not(.light-mode) .badge-green{background:#051a0d;color:#5ddb8f;border-color:rgba(25,111,61,.4);}
+:root:not(.light-mode) .badge-amber{background:#2a220d;color:var(--gold-lt);border-color:rgba(212,175,55,.4);}
+:root:not(.light-mode) .badge-red  {background:#2a0d0d;color:#f5a89a;border-color:rgba(192,57,43,.4);}
 .fill-pct{font-family:var(--mono);font-size:13px;font-weight:600;transition:color .4s;}
 
-/* ── Empty / error states ── */
+/* ══════════════════════════════════════════════════════════
+   EMPTY / ERROR STATES
+   ══════════════════════════════════════════════════════════ */
 .state-box{background:var(--surface);border:2px dashed var(--gold);padding:60px 20px;text-align:center;color:var(--muted);}
+:root:not(.light-mode) .state-box{background:var(--surface);}
 .state-box .icon{font-size:48px;display:block;margin-bottom:16px;}
-.state-box h3{font-family:var(--display);font-size:20px;font-weight:700;margin-bottom:8px;color:var(--navy);}
+.state-box h3{font-family:var(--display);font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text);}
+:root.light-mode .state-box h3{color:var(--navy);}
 
-/* ── Footer ── */
-footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);padding:24px;text-align:center;font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.05em;}
+/* ══════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════ */
+footer{
+  background:var(--navy-dark);
+  border-top:1px solid rgba(212,175,55,0.3);
+  padding:24px 24px 88px; /* extra bottom padding so content clears FABs on mobile */
+  text-align:center;
+  font-family:var(--mono);font-size:12px;
+  color:rgba(255,255,255,.5);letter-spacing:.05em;
+}
+@media(min-width:481px){footer{padding-bottom:24px;}}
 
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════ */
 @media(max-width:768px){
   .site-name{font-size:36px;}
   .lots-overview .big-num{font-size:60px;}
   .lots-overview{padding:24px;align-items:flex-start;}
-  .header-inner{padding:24px 0;}
+  .header-inner{padding:24px 16px;}
   .academic-frame{padding:20px;border-width:0;box-shadow:none;background:transparent;}
   .academic-frame::before{display:none;}
   .gate-panel-inner{padding:18px 20px;gap:18px;}
   .gate-panel-val{font-size:26px;}
   .sec-title{font-size:20px;}
 }
-
-/* ── Help Button ── */
-#help-btn {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  z-index: 900;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--navy-dark);
-  border: 2px solid var(--gold);
-  color: var(--gold);
-  font-family: var(--display);
-  font-size: 18px;
-  font-weight: 800;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(13,27,51,.45);
-  transition: background .2s, transform .15s, box-shadow .2s;
-  line-height: 1;
-}
-#help-btn:hover {
-  background: var(--gold);
-  color: var(--navy-dark);
-  transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(212,175,55,.4);
+@media(max-width:480px){
+  .content{padding:24px 16px;}
 }
 
-/* ── Help Modal Overlay ── */
-#help-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(7,16,31,.72);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s;
+/* ══════════════════════════════════════════════════════════
+   FLOATING ACTION BUTTONS (Help & Theme)
+   ══════════════════════════════════════════════════════════ */
+.fab {
+  position:fixed;
+  right:28px;
+  z-index:900;
+  width:42px;height:42px;
+  border-radius:50%;
+  background:var(--navy-dark);
+  border:2px solid var(--gold);
+  color:var(--gold);
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.45);
+  transition:background .2s,transform .15s,box-shadow .2s,color .2s;
+  line-height:1;
 }
-#help-overlay.open {
-  opacity: 1;
-  pointer-events: all;
+.fab:hover{
+  background:var(--gold);
+  color:var(--navy-dark);
+  transform:scale(1.08);
+  box-shadow:0 6px 20px rgba(212,175,55,.4);
 }
+#help-btn{bottom:28px;font-family:var(--display);font-size:18px;font-weight:800;}
+#theme-btn{bottom:80px;font-size:0;} /* font-size:0 hides emoji fallback text; SVG used instead */
 
-/* ── Help Modal Box ── */
-#help-modal {
-  background: var(--surface);
-  border: 1px solid var(--gold);
-  border-radius: 6px;
-  box-shadow: 0 16px 48px rgba(13,27,51,.4);
-  width: 100%;
-  max-width: 580px;
-  max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  transform: translateY(18px) scale(.97);
-  transition: transform .28s cubic-bezier(.16,1,.3,1);
-  overflow: hidden;
-}
-#help-overlay.open #help-modal {
-  transform: translateY(0) scale(1);
-}
+/* Theme icon SVGs */
+#theme-btn svg{width:20px;height:20px;fill:currentColor;}
 
-.help-modal-header {
-  background: var(--navy-dark);
-  border-bottom: 3px solid var(--gold);
-  padding: 20px 24px 16px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-shrink: 0;
-}
-.help-modal-title {
-  font-family: var(--display);
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
-}
-.help-modal-title span { color: var(--gold); }
-.help-modal-sub {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: rgba(255,255,255,.5);
-  margin-top: 4px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-#help-close {
-  background: none;
-  border: 1px solid rgba(212,175,55,.3);
-  border-radius: 4px;
-  color: rgba(255,255,255,.6);
-  font-size: 18px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all .15s;
-  line-height: 1;
-}
-#help-close:hover {
-  background: rgba(212,175,55,.15);
-  color: #fff;
-  border-color: var(--gold);
-}
-
-.help-modal-body {
-  overflow-y: auto;
-  padding: 24px;
-  flex: 1;
-}
-
-/* ── Help sections ── */
-.help-section {
-  margin-bottom: 24px;
-}
-.help-section:last-child { margin-bottom: 0; }
-
-.help-section-title {
-  font-family: var(--body);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--muted);
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.help-section-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--s2);
-}
-
-.help-item {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-.help-item:last-child { margin-bottom: 0; }
-.help-icon {
-  font-size: 18px;
-  flex-shrink: 0;
-  width: 28px;
-  text-align: center;
-  margin-top: 1px;
-}
-.help-item-body {}
-.help-item-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--navy);
-  margin-bottom: 2px;
-}
-.help-item-desc {
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.55;
-}
-
-/* Status badge pills inside help */
-.help-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 3px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  vertical-align: middle;
-}
-.help-badge.green  { background: var(--green-b);  color: var(--green);  border: 1px solid rgba(25,111,61,.2); }
-.help-badge.amber  { background: var(--amber-b);  color: var(--amber);  border: 1px solid rgba(185,119,14,.2); }
-.help-badge.red    { background: var(--red-b);    color: var(--red);    border: 1px solid rgba(146,43,33,.2); }
-
-.help-modal-footer {
-  padding: 14px 24px;
-  border-top: 1px solid var(--s2);
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--dim);
-  text-align: center;
-  flex-shrink: 0;
-  letter-spacing: .04em;
-}
+/* Spin on theme toggle */
+#theme-btn.spinning{animation:gearspin .4s ease forwards;}
+@keyframes gearspin{from{transform:rotate(0deg) scale(1.08);}to{transform:rotate(180deg) scale(1);}}
 
 @media(max-width:480px){
-  #help-btn { bottom: 20px; right: 20px; width: 38px; height: 38px; font-size: 16px; }
-  .help-modal-body { padding: 18px; }
-  .help-modal-header { padding: 16px 18px 14px; }
+  #help-btn{bottom:20px;right:20px;width:38px;height:38px;font-size:16px;}
+  #theme-btn{bottom:70px;right:20px;width:38px;height:38px;}
+}
+
+/* ══════════════════════════════════════════════════════════
+   HELP MODAL OVERLAY
+   ══════════════════════════════════════════════════════════ */
+#help-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(7,16,31,.72);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  opacity:0;pointer-events:none;
+  transition:opacity .25s;
+}
+#help-overlay.open{opacity:1;pointer-events:all;}
+
+/* ══════════════════════════════════════════════════════════
+   HELP MODAL BOX
+   ══════════════════════════════════════════════════════════ */
+#help-modal{
+  background:var(--surface);
+  border:1px solid var(--gold);
+  border-radius:6px;
+  box-shadow:0 16px 48px rgba(13,27,51,.4);
+  width:100%;max-width:580px;max-height:88vh;
+  display:flex;flex-direction:column;
+  transform:translateY(18px) scale(.97);
+  transition:transform .28s cubic-bezier(.16,1,.3,1);
+  overflow:hidden;
+}
+:root:not(.light-mode) #help-modal{background:var(--surface);}
+#help-overlay.open #help-modal{transform:translateY(0) scale(1);}
+
+.help-modal-header{
+  background:var(--navy-dark);
+  border-bottom:3px solid var(--gold);
+  padding:20px 24px 16px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:12px;flex-shrink:0;
+}
+.help-modal-title{font-family:var(--display);font-size:20px;font-weight:800;color:#fff;letter-spacing:0.02em;line-height:1.2;}
+.help-modal-title span{color:var(--gold);}
+.help-modal-sub{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;}
+#help-close{
+  background:none;border:1px solid rgba(212,175,55,.3);border-radius:4px;
+  color:rgba(255,255,255,.6);font-size:18px;
+  width:32px;height:32px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:all .15s;line-height:1;
+}
+#help-close:hover{background:rgba(212,175,55,.15);color:#fff;border-color:var(--gold);}
+
+.help-modal-body{overflow-y:auto;padding:24px;flex:1;}
+
+/* Help sections */
+.help-section{margin-bottom:24px;}
+.help-section:last-child{margin-bottom:0;}
+.help-section-title{
+  font-family:var(--body);font-size:10px;font-weight:700;
+  color:var(--muted);letter-spacing:.16em;text-transform:uppercase;
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}
+.help-section-title::after{content:'';flex:1;height:1px;background:var(--s2);}
+.help-item{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;}
+.help-item:last-child{margin-bottom:0;}
+.help-icon{font-size:18px;flex-shrink:0;width:28px;text-align:center;margin-top:1px;}
+.help-item-label{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
+:root.light-mode .help-item-label{color:var(--navy);}
+.help-item-desc{font-size:13px;color:var(--muted);line-height:1.55;}
+
+/* Help badge pills */
+.help-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:3px;
+  letter-spacing:.04em;text-transform:uppercase;vertical-align:middle;
+}
+.help-badge.green{background:var(--green-b);color:#5ddb8f;border:1px solid rgba(25,111,61,.4);}
+.help-badge.amber{background:var(--amber-b);color:var(--gold-lt);border:1px solid rgba(212,175,55,.4);}
+.help-badge.red  {background:var(--red-b);  color:#f5a89a;  border:1px solid rgba(192,57,43,.4);}
+:root.light-mode .help-badge.green{color:var(--green);border-color:rgba(25,111,61,.2);}
+:root.light-mode .help-badge.amber{color:var(--amber);border-color:rgba(185,119,14,.2);}
+:root.light-mode .help-badge.red  {color:var(--red);  border-color:rgba(146,43,33,.2);}
+
+.help-modal-footer{
+  padding:14px 24px;
+  border-top:1px solid var(--s2);
+  font-family:var(--mono);font-size:11px;color:var(--dim);
+  text-align:center;flex-shrink:0;letter-spacing:.04em;
+}
+:root:not(.light-mode) .help-modal-footer{border-color:#1c2a6b;}
+
+@media(max-width:480px){
+  .help-modal-body{padding:18px;}
+  .help-modal-header{padding:16px 18px 14px;}
 }
 </style>
 </head>
@@ -401,13 +412,13 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
     <div class="site-name">Park<span>Nav</span></div>
     <div class="site-sub">Ateneo de Cagayan — Campus Parking System</div>
     <div class="header-status-row">
-      <div class="hdr-pill" id="status-pill">
+      <div class="hdr-pill" id="status-pill" role="status" aria-live="polite">
         <div class="live-dot" id="live-dot"></div>
         <span id="status-text">Connecting…</span>
       </div>
-      <div id="next-refresh">3s</div>
-      <div class="hdr-pill" id="msg-pill">Initializing...</div>
-      <div class="hdr-clock" id="live-clock">—</div>
+      <div id="next-refresh" aria-label="Next refresh countdown">3s</div>
+      <div class="hdr-pill" id="msg-pill" aria-live="polite">Initializing...</div>
+      <div class="hdr-clock" id="live-clock" aria-label="Current time">—</div>
     </div>
   </div>
 </header>
@@ -418,7 +429,7 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
     <!-- ══ SECTION 1: CAMPUS ENTRY — Main Gate ══ -->
     <div class="section-label" id="gate-section-label" style="display:none;">🚧 Campus Entry — Main Gate</div>
 
-    <div class="gate-panel" id="gate-strip" style="display:none;">
+    <div class="gate-panel" id="gate-strip" style="display:none;" aria-label="Main Gate Status">
       <div class="gate-panel-inner">
         <div class="gate-panel-left">
           <div class="gate-panel-title">XU Main Gate</div>
@@ -426,17 +437,17 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
         </div>
         <div class="gate-panel-stats">
           <div class="gate-panel-stat">
-            <div class="gate-panel-val" id="g-inside">—</div>
+            <div class="gate-panel-val" id="g-inside" aria-label="Vehicles on campus">—</div>
             <div class="gate-panel-key">Vehicles on Campus</div>
           </div>
-          <div class="gate-traffic-badge normal" id="g-traffic-badge">● Normal</div>
+          <div class="gate-traffic-badge normal" id="g-traffic-badge" role="status">● Normal</div>
         </div>
       </div>
     </div>
 
-    <!-- ══ DROP-OFF NOTE (belongs to gate, sits right below it) ══ -->
-    <div class="dropoff-note" id="dropoff-note" style="display:none;">
-      <span>ℹ️</span>
+    <!-- ══ DROP-OFF NOTE ══ -->
+    <div class="dropoff-note" id="dropoff-note" style="display:none;" role="note">
+      <span aria-hidden="true">ℹ️</span>
       <div>
         <strong>Why campus count may differ from lot totals</strong><br>
         Vehicles that enter the main gate for drop-off only, or cars still inside the campus perimeter but not yet parked or exited, will appear in the gate count but not in any lot.
@@ -448,7 +459,7 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
     <div class="section-label">🅿️ Parking Lots — Combined Overview</div>
 
     <div class="lots-overview" id="total-card">
-      <div class="big-num" id="t-avail">—</div>
+      <div class="big-num" id="t-avail" aria-label="Available parking slots">—</div>
       <div class="lots-details">
         <div class="lots-label">Available Slots</div>
         <div class="lots-sublabel">Across All Parking Lots</div>
@@ -469,24 +480,25 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
         </div>
       </div>
       <div class="donut-wrap">
-        <svg width="96" height="96" viewBox="0 0 96 96">
+        <svg width="96" height="96" viewBox="0 0 96 96"
+             aria-label="Campus occupancy donut chart" role="img">
           <circle class="donut-bg" cx="48" cy="48" r="40"/>
           <circle class="donut-fill" id="donut-fill" cx="48" cy="48" r="40"
             stroke="#2ecc71" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
         </svg>
-        <div class="donut-label" id="donut-label">—%</div>
+        <div class="donut-label" id="donut-label" aria-hidden="true">—%</div>
       </div>
     </div>
 
     <!-- ══ SECTION 3: INDIVIDUAL LOT BREAKDOWN ══ -->
     <div class="sec-title-wrap">
       <h2 class="sec-title">Lot Breakdown</h2>
-      <span class="sec-subtitle" id="area-count">Loading parking areas…</span>
+      <span class="sec-subtitle" id="area-count" aria-live="polite">Loading parking areas…</span>
     </div>
 
-    <div id="cards-grid">
+    <div id="cards-grid" aria-live="polite" aria-label="Parking lot cards">
       <div class="state-box" id="empty-state">
-        <span class="icon">🏛️</span>
+        <span class="icon" aria-hidden="true">🏛️</span>
         <h3>Awaiting System Connection</h3>
         <p style="color:var(--muted);">The system is currently connecting to the main database.</p>
       </div>
@@ -496,12 +508,30 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
 </div>
 
 <footer>
-  Xavier University - Ateneo de Cagayan &nbsp;·&nbsp; ParkNav System &nbsp;·&nbsp;
+  Xavier University — Ateneo de Cagayan &nbsp;·&nbsp; ParkNav System &nbsp;·&nbsp;
   <span id="footer-time">System initializing...</span>
 </footer>
 
 <!-- ── Help Button ── -->
-<button id="help-btn" aria-label="Help" title="Help">?</button>
+<button id="help-btn" class="fab"
+  aria-label="Open user guide"
+  aria-haspopup="dialog"
+  title="User Guide">?</button>
+
+<!-- ── Theme Toggle Button ── -->
+<button id="theme-btn" class="fab"
+  aria-label="Switch to light mode"
+  title="Switch to light mode"
+  aria-pressed="false">
+  <!-- Sun icon (shown in dark mode — click to go light) -->
+  <svg id="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-13a1 1 0 0 0 1-1V2a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1zm0 14a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1zm9-5a1 1 0 0 0 0-2h-1a1 1 0 0 0 0 2h1zM4 12a1 1 0 0 0-1-1H2a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1zm14.66-6.24a1 1 0 0 0-1.42-1.41l-.7.7a1 1 0 0 0 1.41 1.42l.71-.71zm-12.8 12.8a1 1 0 0 0-1.41-1.41l-.71.71a1 1 0 1 0 1.41 1.41l.71-.71zm12.1.71.7.71a1 1 0 0 0 1.42-1.42l-.71-.7a1 1 0 0 0-1.42 1.41zm-12.1-12.1-.71-.71A1 1 0 1 0 4.64 7.88l.71.7a1 1 0 0 0 1.41-1.41z"/>
+  </svg>
+  <!-- Moon icon (shown in light mode — click to go dark) -->
+  <svg id="icon-moon" viewBox="0 0 24 24" aria-hidden="true" style="display:none;">
+    <path d="M21 12.79A9 9 0 0 1 11.21 3a7 7 0 1 0 9.79 9.79z"/>
+  </svg>
+</button>
 
 <!-- ── Help Modal ── -->
 <div id="help-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title">
@@ -512,7 +542,7 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
         <div class="help-modal-title" id="help-title">Park<span>Nav</span> — User Guide</div>
         <div class="help-modal-sub">Xavier University · Ateneo de Cagayan</div>
       </div>
-      <button id="help-close" aria-label="Close help">✕</button>
+      <button id="help-close" aria-label="Close user guide">✕</button>
     </div>
 
     <div class="help-modal-body">
@@ -521,34 +551,34 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
       <div class="help-section">
         <div class="help-section-title">🅿️ What is ParkNav</div>
         <div class="help-item">
-          <div class="help-icon">📡</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">📡</div>
+          <div>
             <div class="help-item-label">Real-Time Parking Monitor</div>
             <div class="help-item-desc">ParkNav shows live parking availability across all XU campus lots. Data is pulled automatically from physical sensors every few seconds — no manual refresh needed.</div>
           </div>
         </div>
       </div>
 
-      <!-- 2. Reading the Header -->
+      <!-- 2. Header Indicators -->
       <div class="help-section">
         <div class="help-section-title">🔝 Header Indicators</div>
         <div class="help-item">
-          <div class="help-icon">🟢</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🟢</div>
+          <div>
             <div class="help-item-label">System Online / Connection Lost</div>
             <div class="help-item-desc">The pulsing dot shows system status. <strong>Green</strong> = live data flowing normally. <strong>Red</strong> = sensor connection lost; displayed numbers may be outdated.</div>
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">⏱️</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">⏱️</div>
+          <div>
             <div class="help-item-label">Countdown Timer (e.g. "3s")</div>
             <div class="help-item-desc">Counts down to the next automatic data refresh. It resets to 3 seconds after each successful fetch. <strong>Orange</strong> color means a fetch is currently in progress.</div>
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🕐</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🕐</div>
+          <div>
             <div class="help-item-label">Live Clock</div>
             <div class="help-item-desc">Shows the current local time, updated every second. Use this to cross-check the "last updated" timestamps on each card.</div>
           </div>
@@ -559,15 +589,15 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
       <div class="help-section">
         <div class="help-section-title">🚧 Campus Entry — Main Gate</div>
         <div class="help-item">
-          <div class="help-icon">🚗</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🚗</div>
+          <div>
             <div class="help-item-label">Vehicles on Campus</div>
-            <div class="help-item-desc">Total vehicles counted through the XU main gate that have not yet exited. This is a <em>campus-wide perimeter count</em> (open spaces), not a lot count.</div>
+            <div class="help-item-desc">Total vehicles counted through the XU main gate that have not yet exited. This is a <em>campus-wide perimeter count</em>, not a lot count.</div>
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🚦</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🚦</div>
+          <div>
             <div class="help-item-label">Traffic Badge</div>
             <div class="help-item-desc">
               Indicates current gate congestion level:<br>
@@ -578,8 +608,8 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">ℹ️</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">ℹ️</div>
+          <div>
             <div class="help-item-label">Why Gate Count ≠ Lot Totals</div>
             <div class="help-item-desc">Vehicles doing <strong>drop-off only</strong>, or cars still moving within campus, appear in the gate count but are not yet assigned to a parking lot. This is normal and expected.</div>
           </div>
@@ -590,22 +620,22 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
       <div class="help-section">
         <div class="help-section-title">📊 Parking Lots — Combined Overview</div>
         <div class="help-item">
-          <div class="help-icon">🔢</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🔢</div>
+          <div>
             <div class="help-item-label">Large Number = Available Slots</div>
             <div class="help-item-desc">The big figure on the left is the total number of free parking slots across <em>all</em> monitored lots right now.</div>
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🍩</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🍩</div>
+          <div>
             <div class="help-item-label">Donut Chart</div>
             <div class="help-item-desc">Visually shows how full campus parking is overall. The ring turns <strong style="color:var(--green)">green</strong> when space is available, <strong style="color:var(--amber)">amber</strong> when filling up, and <strong style="color:var(--red)">red</strong> when near or at capacity.</div>
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">📋</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">📋</div>
+          <div>
             <div class="help-item-label">Occupied / Total Capacity / Lots Full</div>
             <div class="help-item-desc">Quick at-a-glance breakdown. <strong>Lots Full</strong> turns red when one or more parking areas have zero available slots.</div>
           </div>
@@ -616,22 +646,22 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
       <div class="help-section">
         <div class="help-section-title">🗂️ Individual Lot Cards</div>
         <div class="help-item">
-          <div class="help-icon">🏛️</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🏛️</div>
+          <div>
             <div class="help-item-label">Campion Hall · Museo de Oro · Loyola House</div>
             <div class="help-item-desc">One card per monitored parking area. Each shows available slots, total occupied vs. capacity, a fill bar, and a status badge.</div>
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">📶</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">📶</div>
+          <div>
             <div class="help-item-label">Color Bar at Top of Card</div>
-            <div class="help-item-desc">A quick visual cue: <strong style="color:var(--green)">green</strong> = slots free, <strong style="color:var(--amber)">amber</strong> = filling up (≥85% full), <strong style="color:var(--red)">red</strong> = completely full (100%).</div>
+            <div class="help-item-desc">A quick visual cue: <strong style="color:#5ddb8f">green</strong> = slots free, <strong style="color:var(--gold-lt)">amber</strong> = filling up (≥85% full), <strong style="color:#f5a89a">red</strong> = completely full (100%).</div>
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🏷️</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🏷️</div>
+          <div>
             <div class="help-item-label">Status Badges</div>
             <div class="help-item-desc">
               <span class="help-badge green">✓ Available</span> — slots open &nbsp;
@@ -641,8 +671,8 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
           </div>
         </div>
         <div class="help-item">
-          <div class="help-icon">🕓</div>
-          <div class="help-item-body">
+          <div class="help-icon" aria-hidden="true">🕓</div>
+          <div>
             <div class="help-item-label">Last Updated Timestamp</div>
             <div class="help-item-desc">Shows exactly when the sensor last sent data for that specific lot. If this time is several minutes old, the sensor for that area may be temporarily offline.</div>
           </div>
@@ -653,66 +683,78 @@ footer{background:var(--navy-dark);border-top:1px solid rgba(212,175,55,0.3);pad
       <div class="help-section">
         <div class="help-section-title">💡 Tips for Finding Parking</div>
         <div class="help-item">
-          <div class="help-icon">1️⃣</div>
-          <div class="help-item-body">
-            <div class="help-item-desc">Check the <strong>Combined Overview</strong> first to see if any slots are available before heading in.</div>
-          </div>
+          <div class="help-icon" aria-hidden="true">1️⃣</div>
+          <div><div class="help-item-desc">Check the <strong>Combined Overview</strong> first to see if any slots are available before heading in.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">2️⃣</div>
-          <div class="help-item-body">
-            <div class="help-item-desc">Use the <strong>individual lot cards</strong> to identify which specific area has the most open slots.</div>
-          </div>
+          <div class="help-icon" aria-hidden="true">2️⃣</div>
+          <div><div class="help-item-desc">Use the <strong>individual lot cards</strong> to identify which specific area has the most open slots.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">3️⃣</div>
-          <div class="help-item-body">
-            <div class="help-item-desc">If the <strong>Gate shows High Traffic</strong> but lots show availability, there may be vehicles still in transit — expect slight delays.</div>
-          </div>
+          <div class="help-icon" aria-hidden="true">3️⃣</div>
+          <div><div class="help-item-desc">If the <strong>Gate shows High Traffic</strong> but lots show availability, there may be vehicles still in transit — expect slight delays.</div></div>
         </div>
         <div class="help-item">
-          <div class="help-icon">4️⃣</div>
-          <div class="help-item-body">
-            <div class="help-item-desc">Data refreshes automatically every ~3 seconds. There is no need to reload the page.</div>
-          </div>
+          <div class="help-icon" aria-hidden="true">4️⃣</div>
+          <div><div class="help-item-desc">Data refreshes automatically every ~3 seconds. There is no need to reload the page.</div></div>
         </div>
       </div>
 
     </div><!-- /help-modal-body -->
 
     <div class="help-modal-footer">
-      ParkNav · Xavier University – Ateneo de Cagayan &nbsp;·&nbsp; For issues, contact the system <a href="https://m.me/gbrex1976" target="_blank" rel="noopener noreferrer" style="color:navy;text-decoration:underline;text-underline-offset:2px;transition:opacity .15s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">administrator</a>.
+      ParkNav · Xavier University — Ateneo de Cagayan &nbsp;·&nbsp; For issues, contact the system
+      <a href="https://m.me/gbrex1976" target="_blank" rel="noopener noreferrer"
+        style="color:var(--gold);text-decoration:underline;text-underline-offset:2px;transition:opacity .15s;"
+        onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">administrator</a>.
     </div>
 
   </div><!-- /help-modal -->
 </div><!-- /help-overlay -->
 
 <script>
+'use strict';
 // ════════════════════════════════════════════════════════════════
 //  CONFIG
 // ════════════════════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztQwSchnUkabk56N4u_unf-EyrzS2AjwgNNolohoUJYknKCvkUsxuMEbkI1tvnR8G9/exec';
+const SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbztQwSchnUkabk56N4u_unf-EyrzS2AjwgNNolohoUJYknKCvkUsxuMEbkI1tvnR8G9/exec';
+const REFRESH_SEC = 3;   // seconds between fetches
+const FETCH_TIMEOUT_MS = 10000; // 10 s — abort if Apps Script hangs
+
+// ════════════════════════════════════════════════════════════════
+//  CONSTANTS (hoisted to avoid recreation on every call)
+// ════════════════════════════════════════════════════════════════
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const AREA_DISPLAY_NAMES = {
+  'CH':           'Campion Hall',
+  'Museum':       'Museo de Oro',
+  'Loyola':       'Loyola House',
+  'Campion Hall': 'Campion Hall',
+  'Museo de Oro': 'Museo de Oro',
+  'Loyola House': 'Loyola House',
+};
+
+const STATUS_META = {
+  available: { band:'#27ae60', badgeCls:'badge-green', icon:'✓', label:'Available'  },
+  warning:   { band:'#d4af37', badgeCls:'badge-amber', icon:'!', label:'Filling Up' },
+  full:      { band:'#c0392b', badgeCls:'badge-red',   icon:'✕', label:'Full'       },
+};
 
 // ════════════════════════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════════════════════════
-let refreshTimer  = null;
-let countdown     = 3;
-let isFetching    = false;
+let refreshTimer = null;
+let countdown    = REFRESH_SEC;
+let isFetching   = false;
 
-// latestAreas holds ONLY the three parking lots (CH, Loyola, Museum)
-// campusGate holds the main gate row separately — it is NEVER mixed into lot math
-let latestAreas   = {};   // { areaKey: { occupied, capacity, status, lastUpdated } }
-let campusGate    = null; // { occupied, capacity, lastUpdated }
-let campusGatePrev = null;
+// latestAreas: parking lot sensors ONLY — gate row excluded
+let latestAreas = {};   // { areaKey: { occupied, capacity, lastUpdated } }
+let campusGate  = null; // { occupied, capacity, lastUpdated }
 
 // ════════════════════════════════════════════════════════════════
 //  BOOT
 // ════════════════════════════════════════════════════════════════
-function tickClock() {
-  const el = document.getElementById('live-clock');
-  if (el) el.textContent = fmtTime(Date.now());
-}
 tickClock();
 setInterval(tickClock, 1000);
 
@@ -720,16 +762,33 @@ if (SCRIPT_URL && SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
   startFetching();
 }
 
+// Pause/resume fetching when the tab is hidden/visible (saves API quota)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  } else {
+    // Immediately fetch on return, then restart timer
+    if (!isFetching) fetchData();
+    startFetching();
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+//  CLOCK
+// ════════════════════════════════════════════════════════════════
+function tickClock() {
+  const el = document.getElementById('live-clock');
+  if (el) el.textContent = fmtTime(Date.now());
+}
+
 // ════════════════════════════════════════════════════════════════
 //  TIMER
 // ════════════════════════════════════════════════════════════════
 function startFetching() {
   clearInterval(refreshTimer);
-  fetchData();
   refreshTimer = setInterval(() => {
-    if (!isFetching) {
-      countdown--;
-    }
+    if (!isFetching) countdown--;
     updateCountdownDisplay();
     if (!isFetching && countdown <= 0) fetchData();
   }, 1000);
@@ -737,20 +796,28 @@ function startFetching() {
 
 function updateCountdownDisplay() {
   const el = document.getElementById('next-refresh');
-  el.textContent = (countdown > 0 ? countdown : 0) + 's';
+  el.textContent = Math.max(0, countdown) + 's';
   el.style.color = isFetching ? '#f39c12' : 'var(--gold)';
 }
 
 // ════════════════════════════════════════════════════════════════
-//  FETCH
+//  FETCH  (with AbortController timeout)
 // ════════════════════════════════════════════════════════════════
 async function fetchData() {
   if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE' || isFetching) return;
   isFetching = true;
   setStatusPill('loading');
 
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   try {
-    const res  = await fetch(SCRIPT_URL + '?action=summary', { cache: 'no-store' });
+    const res  = await fetch(SCRIPT_URL + '?action=summary', {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'Unknown error');
 
@@ -758,90 +825,68 @@ async function fetchData() {
     const fetchedAt = Date.now();
     latestAreas     = {};
 
-    // ── Separate gate row from parking lot rows ─────────────────
-    // The Campus row is the main gate traffic counter.
-    // It must NOT be mixed into lot availability math.
+    // Separate gate row from lot rows
     const gateRaw = allAreas['Campus'] || null;
 
     Object.keys(allAreas).forEach(key => {
-      if (key === 'Campus') return; // handled separately below
-
-      const fresh  = allAreas[key];
-
-      // lastUpdated comes from Google Sheets — the exact moment
-      // the SMS arrived and was written to the Sheet by the admin app.
-      // Apps Script sends it as an ISO 8601 string (e.g. "2026-03-04T09:35:33.000Z").
-      // Fall back to fetchedAt only if the Sheet field is missing.
+      if (key === 'Campus') return;
+      const fresh   = allAreas[key];
       const sheetTs = fresh.lastUpdated ? Date.parse(fresh.lastUpdated) : NaN;
       fresh.lastUpdated = isNaN(sheetTs) ? fetchedAt : sheetTs;
-
-      // Clamp to valid range
-      fresh.occupied = Math.min(Math.max(0, fresh.occupied || 0), fresh.capacity || 0);
-      latestAreas[key] = fresh;
+      fresh.occupied    = Math.min(Math.max(0, fresh.occupied || 0), fresh.capacity || 0);
+      latestAreas[key]  = fresh;
     });
 
-    // ── Process gate data ───────────────────────────────────────
     if (gateRaw) {
-      // lastUpdated comes from Google Sheets — the exact moment
-      // the SMS arrived and was written to the Sheet by the admin app.
-      const gateSheetTs = gateRaw.lastUpdated ? Date.parse(gateRaw.lastUpdated) : NaN;
-      gateRaw.lastUpdated = isNaN(gateSheetTs) ? fetchedAt : gateSheetTs;
-
-      // Gate occupied = vehicles currently inside campus perimeter
-      // No upper clamp — count can exceed capacity due to drop-off vehicles
-      gateRaw.occupied = Math.max(0, gateRaw.occupied || 0);
-      campusGatePrev = campusGate ? { ...campusGate } : null;
+      const gateTs = gateRaw.lastUpdated ? Date.parse(gateRaw.lastUpdated) : NaN;
+      gateRaw.lastUpdated = isNaN(gateTs) ? fetchedAt : gateTs;
+      gateRaw.occupied    = Math.max(0, gateRaw.occupied || 0);
       campusGate = gateRaw;
     } else {
-      campusGatePrev = campusGate ? { ...campusGate } : null;
-      campusGate     = null;
+      campusGate = null;
     }
 
-    // ── Render ──────────────────────────────────────────────────
     renderSummary();
     renderGateStrip();
     renderCards();
     setStatusPill('ok');
     document.getElementById('footer-time').textContent = 'Last sync: ' + fmtTime(Date.now());
 
-  } catch(e) {
+  } catch (e) {
+    clearTimeout(timeoutId);
+    const isAbort = e.name === 'AbortError';
     setStatusPill('err');
     console.error('Fetch error:', e);
-    showError(e.message);
+    showError(isAbort ? 'Request timed out after 10 seconds.' : e.message);
   } finally {
     isFetching = false;
-    countdown  = 3;
+    countdown  = REFRESH_SEC;
     updateCountdownDisplay();
   }
 }
 
 // ════════════════════════════════════════════════════════════════
 //  RENDER SUMMARY
-//  Source of truth: the three parking lot sensors ONLY.
-//  The main gate (Campus row) is intentionally excluded here.
 // ════════════════════════════════════════════════════════════════
 function renderSummary() {
-  const lots = Object.values(latestAreas);
-
-  // All numbers are derived purely from the three lot sensors
+  const lots     = Object.values(latestAreas);
   const totalCap = lots.reduce((s, a) => s + (a.capacity || 0), 0);
   const totalOcc = lots.reduce((s, a) => s + (a.occupied || 0), 0);
   const avail    = Math.max(0, totalCap - totalOcc);
   const pct      = totalCap ? Math.round((totalOcc / totalCap) * 100) : 0;
-
-  // "Lots Full" = lot where every slot is taken (occupied >= capacity > 0)
-  const fullCount = lots.filter(a => a.capacity > 0 && a.occupied >= a.capacity).length;
+  const fullCount= lots.filter(a => a.capacity > 0 && a.occupied >= a.capacity).length;
 
   document.getElementById('t-avail').textContent = avail;
   document.getElementById('t-occ').textContent   = totalOcc;
   document.getElementById('t-cap').textContent   = totalCap;
+
   const tFullEl = document.getElementById('t-full');
-  tFullEl.textContent  = fullCount;
-  tFullEl.style.color  = fullCount > 0 ? '#e74c3c' : '#fff';
+  tFullEl.textContent = fullCount;
+  tFullEl.style.color = fullCount > 0 ? '#e74c3c' : '#fff';
+
   document.getElementById('donut-label').textContent = pct + '%';
 
-  // Timestamp: most recent lot update
-  const latestTs = lots.reduce((m, a) => Math.max(m, a.lastUpdated || 0), 0);
+  const latestTs   = lots.reduce((m, a) => Math.max(m, a.lastUpdated || 0), 0);
   const lotsTimeEl = document.getElementById('lots-last-updated');
   if (lotsTimeEl) {
     lotsTimeEl.textContent = latestTs
@@ -849,36 +894,30 @@ function renderSummary() {
       : 'Waiting for sensor data...';
   }
 
-  // Donut ring — visual clamped to 100% max regardless of actual pct
-  const circ      = 251.2;
-  const visualPct = Math.min(pct, 100);
-  const offset    = circ - (circ * visualPct / 100);
-  const fill      = document.getElementById('donut-fill');
-  fill.style.strokeDashoffset = offset;
+  // Donut ring
+  const circ   = 251.2;
+  const fill   = document.getElementById('donut-fill');
+  fill.style.strokeDashoffset = circ - (circ * Math.min(pct, 100) / 100);
   fill.style.stroke = pct >= 100 ? '#c0392b' : pct >= 80 ? '#d4af37' : '#27ae60';
+  fill.setAttribute('aria-label', pct + '% occupied');
 
-  const specificCount = lots.length;
   document.getElementById('msg-pill').textContent =
-    specificCount + ' parking lot' + (specificCount !== 1 ? 's' : '') + ' monitored';
+    lots.length + ' parking lot' + (lots.length !== 1 ? 's' : '') + ' monitored';
 }
 
 // ════════════════════════════════════════════════════════════════
 //  RENDER GATE STRIP
-//  Shows campus gate as a SEPARATE traffic indicator.
-//  Explains any delta between gate count and lot totals.
-//  Gate panel is Section 1 — above the lots overview.
 // ════════════════════════════════════════════════════════════════
 function renderGateStrip() {
-  const strip     = document.getElementById('gate-strip');
-  const noteEl    = document.getElementById('dropoff-note');
-  const deltaEl   = document.getElementById('dropoff-delta');
-  const gateUpd   = document.getElementById('gate-last-updated');
-
-  const labelEl   = document.getElementById('gate-section-label');
+  const strip   = document.getElementById('gate-strip');
+  const noteEl  = document.getElementById('dropoff-note');
+  const deltaEl = document.getElementById('dropoff-delta');
+  const gateUpd = document.getElementById('gate-last-updated');
+  const labelEl = document.getElementById('gate-section-label');
 
   if (!campusGate) {
-    strip.style.display   = 'none';
-    noteEl.style.display  = 'none';
+    strip.style.display  = 'none';
+    noteEl.style.display = 'none';
     if (labelEl) labelEl.style.display = 'none';
     return;
   }
@@ -886,14 +925,10 @@ function renderGateStrip() {
   if (labelEl) labelEl.style.display = '';
   strip.style.display = 'block';
 
-  // "Vehicles on Campus" = entered main gate, not yet exited
   const gOcc = campusGate.occupied || 0;
   const gCap = campusGate.capacity || 0;
-
   document.getElementById('g-inside').textContent = gOcc;
 
-  // Traffic status — capacity is a soft baseline, not a hard ceiling
-  // Normal: <80%  |  Busy: 80–99%  |  High Traffic: 100%+
   const badge = document.getElementById('g-traffic-badge');
   const pct   = gCap ? (gOcc / gCap) * 100 : 0;
   if (pct >= 100) {
@@ -911,13 +946,12 @@ function renderGateStrip() {
     ? 'Last updated: ' + fmtTime(campusGate.lastUpdated)
     : 'Waiting for gate sensor...';
 
-  // Delta: vehicles on campus perimeter vs vehicles accounted in lots
   const lotOcc = Object.values(latestAreas).reduce((s, a) => s + (a.occupied || 0), 0);
   const delta  = gOcc - lotOcc;
 
   if (delta > 0) {
     noteEl.style.display = 'flex';
-    deltaEl.innerHTML = ' Currently <strong>' + delta + ' vehicle' + (delta !== 1 ? 's' : '') + '</strong> on campus open space not accounted in any lot.';
+    deltaEl.innerHTML    = ' Currently <strong>' + delta + ' vehicle' + (delta !== 1 ? 's' : '') + '</strong> on campus not accounted in any lot.';
   } else {
     noteEl.style.display = 'none';
   }
@@ -926,21 +960,14 @@ function renderGateStrip() {
 // ════════════════════════════════════════════════════════════════
 //  RENDER AREA CARDS
 // ════════════════════════════════════════════════════════════════
-const AREA_DISPLAY_NAMES = {
-  'CH':           'Campion Hall',
-  'Museum':       'Museo de Oro',
-  'Loyola':       'Loyola House',
-  'Campion Hall': 'Campion Hall',
-  'Museo de Oro': 'Museo de Oro',
-  'Loyola House': 'Loyola House',
-};
 function displayName(area) { return AREA_DISPLAY_NAMES[area] || area; }
 
-const STATUS_META = {
-  available: { band:'#27ae60', badgeCls:'badge-green', icon:'✓', label:'Available',  numColor:'#27ae60' },
-  warning:   { band:'#d4af37', badgeCls:'badge-amber', icon:'!', label:'Filling Up',  numColor:'#b9770e' },
-  full:      { band:'#c0392b', badgeCls:'badge-red',   icon:'✕', label:'Full',        numColor:'#c0392b' },
-};
+function getNumColor(status) {
+  const isDark = !document.documentElement.classList.contains('light-mode');
+  if (status === 'available') return isDark ? '#5ddb8f' : '#27ae60';
+  if (status === 'warning')   return isDark ? '#ffd166' : '#b9770e';
+  return isDark ? '#f5a89a' : '#c0392b';
+}
 
 function renderCards() {
   const grid  = document.getElementById('cards-grid');
@@ -954,69 +981,78 @@ function renderCards() {
 
   if (areas.length === 0) {
     grid.innerHTML = `<div class="state-box" id="empty-state">
-      <span class="icon">📡</span><h3>No Sensor Data</h3>
+      <span class="icon" aria-hidden="true">📡</span>
+      <h3>No Sensor Data</h3>
       <p style="color:var(--muted);">Awaiting communication from parking sensors.</p></div>`;
     return;
   }
 
   areas.forEach(area => {
-    const d   = latestAreas[area];
-    const cap = d.capacity || 0;
-    const occ = d.occupied; // already clamped in fetchData
-    const pct = cap ? Math.round((occ / cap) * 100) : 100;
-
-    // Status derived purely from occupancy percentage — consistent with summary card
-    const status = pct >= 100 ? 'full' : pct >= 85 ? 'warning' : 'available';
-    const meta   = STATUS_META[status];
-    const id     = 'acard-' + area.replace(/[^a-z0-9]/gi, '_');
-    const avail  = Math.max(0, cap - occ);
-    const existing = document.getElementById(id);
+    const d        = latestAreas[area];
+    const cap      = d.capacity || 0;
+    const occ      = d.occupied;
+    const pct      = cap ? Math.round((occ / cap) * 100) : 100;
+    const status   = pct >= 100 ? 'full' : pct >= 85 ? 'warning' : 'available';
+    const meta     = STATUS_META[status];
+    const numColor = getNumColor(status);
+    const id       = 'acard-' + area.replace(/[^a-z0-9]/gi, '_');
+    const avail    = Math.max(0, cap - occ);
     const timeStr  = fmtTime(d.lastUpdated || Date.now());
+    const existing = document.getElementById(id);
 
     if (existing) {
-      existing.querySelector('.card-band').style.background          = meta.band;
-      existing.querySelector('.frac-big').textContent                = occ;
-      existing.querySelector('.frac-denom').textContent              = '/' + cap;
-      existing.querySelector('.frac-big').style.color                = meta.numColor;
-      existing.querySelector('.avail-num').textContent               = avail;
-      existing.querySelector('.avail-num').style.color               = meta.numColor;
-      existing.querySelector('.prog-fill').style.width               = Math.min(pct, 100) + '%';
-      existing.querySelector('.prog-fill').style.background          = meta.band;
-      existing.querySelector('.card-area-time').textContent          = 'Last updated: ' + timeStr;
-      const badge = existing.querySelector('.status-badge');
-      badge.className   = 'status-badge ' + meta.badgeCls;
-      badge.textContent = meta.icon + ' ' + meta.label;
-      const pctEl = existing.querySelector('.fill-pct');
-      pctEl.textContent  = pct + '% full';
-      pctEl.style.color  = meta.numColor;
+      // Update in place — avoid full re-render to preserve animation state
+      const band   = existing.querySelector('.card-band');
+      const fracB  = existing.querySelector('.frac-big');
+      const fracD  = existing.querySelector('.frac-denom');
+      const availN = existing.querySelector('.avail-num');
+      const progF  = existing.querySelector('.prog-fill');
+      const timeEl = existing.querySelector('.card-area-time');
+      const badge  = existing.querySelector('.status-badge');
+      const pctEl  = existing.querySelector('.fill-pct');
+
+      band.style.background   = meta.band;
+      fracB.textContent       = occ;
+      fracD.textContent       = '/' + cap;
+      fracB.style.color       = numColor;
+      availN.textContent      = avail;
+      availN.style.color      = numColor;
+      progF.style.width       = Math.min(pct, 100) + '%';
+      progF.style.background  = meta.band;
+      timeEl.textContent      = 'Last updated: ' + timeStr;
+      badge.className         = 'status-badge ' + meta.badgeCls;
+      badge.textContent       = meta.icon + ' ' + meta.label;
+      pctEl.textContent       = pct + '% full';
+      pctEl.style.color       = numColor;
     } else {
       const card = document.createElement('div');
       card.className = 'area-card';
       card.id = id;
+      card.setAttribute('aria-label', displayName(area) + ' parking lot');
       card.innerHTML = `
-        <div class="card-band" style="background:${meta.band}"></div>
+        <div class="card-band" style="background:${meta.band}" aria-hidden="true"></div>
         <div class="card-content">
           <div class="card-area-name">${esc(displayName(area))}</div>
           <span class="card-area-time">Last updated: ${timeStr}</span>
           <div class="frac-row">
             <div class="avail-box">
               <div class="metric-label">Available</div>
-              <div class="avail-num" style="color:${meta.numColor}">${avail}</div>
+              <div class="avail-num" style="color:${numColor}">${avail}</div>
             </div>
             <div style="text-align:right;">
               <div class="metric-label">Occupied</div>
               <div>
-                <span class="frac-big" style="color:${meta.numColor};">${occ}</span>
+                <span class="frac-big" style="color:${numColor};">${occ}</span>
                 <span class="frac-denom">/${cap}</span>
               </div>
             </div>
           </div>
-          <div class="prog-track">
+          <div class="prog-track" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${pct}% full">
             <div class="prog-fill" style="width:${Math.min(pct,100)}%;background:${meta.band}"></div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <span class="status-badge ${meta.badgeCls}">${meta.icon} ${meta.label}</span>
-            <span class="fill-pct" style="color:${meta.numColor}">${pct}% full</span>
+            <span class="fill-pct" style="color:${numColor}">${pct}% full</span>
           </div>
         </div>`;
       grid.appendChild(card);
@@ -1031,19 +1067,22 @@ function setStatusPill(state) {
   const pill = document.getElementById('status-pill');
   const dot  = document.getElementById('live-dot');
   const txt  = document.getElementById('status-text');
+
   pill.className = 'hdr-pill';
-  txt.textContent = 'System Online';
+
   if (state === 'ok') {
-    dot.style.background  = '#2ecc71';
-    dot.style.boxShadow   = '0 0 10px #2ecc71';
+    txt.textContent      = 'System Online';
+    dot.style.background = '#2ecc71';
+    dot.style.boxShadow  = '0 0 10px #2ecc71';
   } else if (state === 'loading') {
-    dot.style.background  = '#f39c12';
-    dot.style.boxShadow   = '0 0 10px #f39c12';
+    txt.textContent      = 'System Online';
+    dot.style.background = '#f39c12';
+    dot.style.boxShadow  = '0 0 10px #f39c12';
   } else {
-    pill.className        = 'hdr-pill red';
-    txt.textContent       = 'Connection Lost';
-    dot.style.background  = '#e74c3c';
-    dot.style.boxShadow   = '0 0 10px #e74c3c';
+    pill.className       = 'hdr-pill red';
+    txt.textContent      = 'Connection Lost';
+    dot.style.background = '#e74c3c';
+    dot.style.boxShadow  = '0 0 10px #e74c3c';
   }
 }
 
@@ -1051,22 +1090,21 @@ function showError(msg) {
   const grid = document.getElementById('cards-grid');
   if (Object.keys(latestAreas).length === 0) {
     grid.innerHTML = `<div class="state-box">
-      <span class="icon">⚠️</span><h3>Connection Error</h3>
+      <span class="icon" aria-hidden="true">⚠️</span>
+      <h3>Connection Error</h3>
       <p style="color:var(--muted);font-size:14px;margin-top:10px">
         ${esc(msg)}<br><br>
         Please verify the Apps Script URL and ensure deployment access is set to "Anyone".
       </p></div>`;
   }
-  // Always update footer to signal the failure time
   document.getElementById('footer-time').textContent = 'Connection failed at ' + fmtTime(Date.now());
 }
 
 // ════════════════════════════════════════════════════════════════
-//  UTILS
+//  UTILITIES
 // ════════════════════════════════════════════════════════════════
 function fmtTime(ts) {
   const d    = new Date(ts);
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const yyyy = d.getFullYear();
   const mon  = MONTHS[d.getMonth()];
   const day  = d.getDate();
@@ -1077,17 +1115,19 @@ function fmtTime(ts) {
   const hh12 = String(hh24 % 12 || 12).padStart(2,'0');
   return `${yyyy}-${mon}-${day}, ${hh12}:${mm}:${ss} ${ampm}`;
 }
+
 function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 // ════════════════════════════════════════════════════════════════
-//  HELP MODAL
+//  HELP MODAL  (with basic focus trap)
 // ════════════════════════════════════════════════════════════════
-(function() {
-  const overlay = document.getElementById('help-overlay');
-  const btn     = document.getElementById('help-btn');
-  const closeBtn= document.getElementById('help-close');
+(function () {
+  const overlay  = document.getElementById('help-overlay');
+  const helpBtn  = document.getElementById('help-btn');
+  const closeBtn = document.getElementById('help-close');
+  const modal    = document.getElementById('help-modal');
 
   function openHelp() {
     overlay.classList.add('open');
@@ -1097,20 +1137,79 @@ function esc(s) {
   function closeHelp() {
     overlay.classList.remove('open');
     document.body.style.overflow = '';
-    btn.focus();
+    helpBtn.focus();
   }
 
-  btn.addEventListener('click', openHelp);
+  helpBtn.addEventListener('click', openHelp);
   closeBtn.addEventListener('click', closeHelp);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeHelp(); });
 
-  // Close on overlay backdrop click
-  overlay.addEventListener('click', function(e) {
-    if (e.target === overlay) closeHelp();
+  // Keyboard: Escape closes; Tab stays within modal
+  document.addEventListener('keydown', e => {
+    if (!overlay.classList.contains('open')) return;
+    if (e.key === 'Escape') { closeHelp(); return; }
+    if (e.key === 'Tab') {
+      const focusable = [...modal.querySelectorAll(
+        'button,a[href],[tabindex]:not([tabindex="-1"])'
+      )].filter(el => !el.disabled);
+      if (!focusable.length) { e.preventDefault(); return; }
+      const first = focusable[0];
+      const last  = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    }
   });
+})();
 
-  // Close on Escape key
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && overlay.classList.contains('open')) closeHelp();
+// ════════════════════════════════════════════════════════════════
+//  THEME TOGGLE  (Sun/Moon icon swap + meta theme-color update)
+// ════════════════════════════════════════════════════════════════
+(function () {
+  const themeBtn  = document.getElementById('theme-btn');
+  const iconSun   = document.getElementById('icon-sun');
+  const iconMoon  = document.getElementById('icon-moon');
+  const root      = document.documentElement;
+  const metaTheme = document.getElementById('meta-theme-color');
+
+  let isLight = false;
+  try { isLight = localStorage.getItem('parknav-theme') === 'light'; } catch (_) {}
+
+  function applyTheme(light) {
+    if (light) {
+      root.classList.add('light-mode');
+      iconSun.style.display  = 'none';
+      iconMoon.style.display = '';
+      themeBtn.setAttribute('aria-label',  'Switch to dark mode');
+      themeBtn.setAttribute('title',       'Switch to dark mode');
+      themeBtn.setAttribute('aria-pressed','true');
+      if (metaTheme) metaTheme.setAttribute('content', '#f0f2f5');
+    } else {
+      root.classList.remove('light-mode');
+      iconSun.style.display  = '';
+      iconMoon.style.display = 'none';
+      themeBtn.setAttribute('aria-label',  'Switch to light mode');
+      themeBtn.setAttribute('title',       'Switch to light mode');
+      themeBtn.setAttribute('aria-pressed','false');
+      if (metaTheme) metaTheme.setAttribute('content', '#05091a');
+    }
+    // Refresh inline card colours for the new theme
+    if (Object.keys(latestAreas).length > 0) renderCards();
+  }
+
+  applyTheme(isLight);
+
+  themeBtn.addEventListener('click', () => {
+    isLight = !isLight;
+    applyTheme(isLight);
+    try { localStorage.setItem('parknav-theme', isLight ? 'light' : 'dark'); } catch (_) {}
+    // Spin animation restart
+    themeBtn.classList.remove('spinning');
+    void themeBtn.offsetWidth;
+    themeBtn.classList.add('spinning');
+    themeBtn.addEventListener('animationend', () => themeBtn.classList.remove('spinning'), { once: true });
   });
 })();
 </script>
